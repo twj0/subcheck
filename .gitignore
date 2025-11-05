@@ -1,0 +1,25 @@
+openipdb.ipdb
+config.yaml
+mihomo.yaml
+test
+output/*
+subs-check*
+mihomo-check*
+
+.idea
+.vscode
+.lingma
+.windsurf
+.DS_Store
+gemini.md
+claude.md
+
+# Ignore images
+*.png
+*.jpg
+*.jpeg
+*.gif
+
+# Ignore documentation and other data files
+speed-check/doc/
+ip-quality-check/ref/

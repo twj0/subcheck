@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Subscriptions</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="p-3">
+  <div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h4 class="mb-0">Subscriptions</h4>
+      <a class="btn btn-outline-secondary btn-sm" href="/admin">Back</a>
+    </div>
+
+    <div class="card mb-3">
+      <div class="card-body">
+        <div class="row g-2 align-items-end">
+          <div class="col-md-3">
+            <label class="form-label form-label-sm">Name</label>
+            <input id="s_name" class="form-control form-control-sm" />
+          </div>
+          <div class="col-md-6">
+            <label class="form-label form-label-sm">URL</label>
+            <input id="s_url" class="form-control form-control-sm" />
+          </div>
+          <div class="col-md-2 form-check mt-4">
+            <input type="checkbox" class="form-check-input" id="s_enabled" checked />
+            <label class="form-check-label" for="s_enabled">Enabled</label>
+          </div>
+          <div class="col-md-1 text-end">
+            <button class="btn btn-primary btn-sm" id="btnAdd">Add</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="table-responsive">
+      <table class="table table-sm table-striped align-middle">
+        <thead>
+          <tr>
+            <th>ID</th><th>Name</th><th>URL</th><th>Enabled</th><th>Created</th><th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+    <div class="d-flex align-items-center gap-2">
+      <button class="btn btn-outline-secondary btn-sm" id="prev">Prev</button>
+      <span id="pginfo" class="small text-muted"></span>
+      <button class="btn btn-outline-secondary btn-sm" id="next">Next</button>
+    </div>
+    <div id="alert" class="alert alert-warning d-none mt-2"></div>
+  </div>
+
+  <script>
+    let page=1, size=20;
+    function apiKey(){ return localStorage.getItem('apiKey')||''; }
+    function showError(msg){ const a=document.getElementById('alert'); a.textContent=msg; a.classList.remove('d-none'); }
+
+    function load(){
+      const params = new URLSearchParams({ page, page_size: size });
+      fetch('/api/subscriptions?'+params.toString(), { headers: { 'X-API-Key': apiKey() } })
+        .then(r=>{ if(r.status===401) throw new Error('unauthorized'); return r.json(); })
+        .then(d=>{
+          const tb=document.getElementById('tbody'); tb.innerHTML='';
+          (d.items||[]).forEach(x=>{
+            const tr=document.createElement('tr');
+            tr.innerHTML = `<td>${x.ID||x.id}</td>
+              <td><input class="form-control form-control-sm" value="${x.Name||x.name}" data-id="${x.ID||x.id}" data-field="name"/></td>
+              <td><input class="form-control form-control-sm" value="${x.URL||x.url}" data-id="${x.ID||x.id}" data-field="url"/></td>
+              <td><input type="checkbox" ${x.Enabled?'checked':''} data-id="${x.ID||x.id}" data-field="enabled"/></td>
+              <td>${x.CreatedAt||x.created_at||''}</td>
+              <td>
+                <button class="btn btn-success btn-sm" data-act="save" data-id="${x.ID||x.id}">Save</button>
+                <button class="btn btn-danger btn-sm" data-act="del" data-id="${x.ID||x.id}">Delete</button>
+              </td>`;
+            tb.appendChild(tr);
+          });
+          document.getElementById('pginfo').textContent = `Page ${page}, Total ${d.total||0}`;
+        }).catch(e=> showError(e.message));
+    }
+
+    document.getElementById('btnAdd').onclick=()=>{
+      const name=document.getElementById('s_name').value.trim();
+      const url=document.getElementById('s_url').value.trim();
+      const enabled=document.getElementById('s_enabled').checked;
+      fetch('/api/subscriptions', {
+        method:'POST',
+        headers: { 'Content-Type':'application/json', 'X-API-Key': apiKey() },
+        body: JSON.stringify({ name, url, enabled })
+      }).then(r=>r.json()).then(()=>{ load(); });
+    };
+
+    document.getElementById('tbody').onclick=(e)=>{
+      const t=e.target; const act=t.getAttribute('data-act'); const id=t.getAttribute('data-id');
+      if(act==='del'){
+        if(!confirm('Delete subscription '+id+'?')) return;
+        fetch('/api/subscriptions/'+id, { method:'DELETE', headers:{ 'X-API-Key': apiKey() }})
+          .then(r=>r.json()).then(()=> load());
+      }
+      if(act==='save'){
+        const row=t.closest('tr');
+        const inputs=row.querySelectorAll('input');
+        const body={};
+        inputs.forEach(inp=>{ const f=inp.getAttribute('data-field'); if(!f) return; if(inp.type==='checkbox'){ body[f]=inp.checked } else { body[f]=inp.value } });
+        fetch('/api/subscriptions/'+id, { method:'PUT', headers:{ 'Content-Type':'application/json', 'X-API-Key': apiKey() }, body: JSON.stringify(body) })
+          .then(r=>r.json()).then(()=> load());
+      }
+    };
+
+    document.getElementById('prev').onclick=()=>{ if(page>1){ page--; load(); } };
+    document.getElementById('next').onclick=()=>{ page++; load(); };
+    load();
+  </script>
+</body>
+</html>

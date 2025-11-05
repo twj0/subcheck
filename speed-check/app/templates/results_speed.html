@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Speed Results</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="p-3">
+  <div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h4 class="mb-0">Speed Results</h4>
+      <a class="btn btn-outline-secondary btn-sm" href="/admin">Back</a>
+    </div>
+
+    <div class="card mb-3">
+      <div class="card-body">
+        <div class="row g-2">
+          <div class="col-md-2"><input id="q_node" class="form-control form-control-sm" placeholder="Node name" /></div>
+          <div class="col-md-2"><input id="q_min" class="form-control form-control-sm" placeholder="Min KB/s" /></div>
+          <div class="col-md-2"><input id="q_max" class="form-control form-control-sm" placeholder="Max KB/s" /></div>
+          <div class="col-md-2">
+            <select id="q_sort" class="form-select form-select-sm">
+              <option value="test_time">Sort: Time</option>
+              <option value="download_speed">Sort: Speed</option>
+              <option value="node_name">Sort: Node</option>
+            </select>
+          </div>
+          <div class="col-md-2">
+            <select id="q_dir" class="form-select form-select-sm">
+              <option value="DESC">DESC</option>
+              <option value="ASC">ASC</option>
+            </select>
+          </div>
+          <div class="col-md-2 text-end"><button id="btnQuery" class="btn btn-primary btn-sm">Query</button></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="table-responsive">
+      <table class="table table-sm table-striped">
+        <thead>
+          <tr>
+            <th>Time</th><th>Node</th><th>Download KB/s</th><th>IP</th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+    <div class="d-flex align-items-center gap-2">
+      <button class="btn btn-outline-secondary btn-sm" id="prev">Prev</button>
+      <span id="pginfo" class="small text-muted"></span>
+      <button class="btn btn-outline-secondary btn-sm" id="next">Next</button>
+    </div>
+    <div id="alert" class="alert alert-warning d-none mt-2"></div>
+  </div>
+
+  <script>
+    let page=1, size=20;
+    function apiKey(){ return localStorage.getItem('apiKey')||''; }
+    function qsel(id){ return document.getElementById(id).value.trim(); }
+    function showError(msg){ const a=document.getElementById('alert'); a.textContent=msg; a.classList.remove('d-none'); }
+
+    function load(){
+      const params = new URLSearchParams({ page, page_size: size, node: qsel('q_node'), min_speed: qsel('q_min'), max_speed: qsel('q_max'), sort_by: qsel('q_sort'), sort_dir: qsel('q_dir') });
+      fetch('/api/results/speed?'+params.toString(), { headers: { 'X-API-Key': apiKey() } })
+        .then(r=>{ if(r.status===401) throw new Error('unauthorized'); return r.json(); })
+        .then(d=>{
+          const tb=document.getElementById('tbody'); tb.innerHTML='';
+          (d.items||[]).forEach(x=>{
+            const tr=document.createElement('tr');
+            const ip = x.IPAddress && x.IPAddress.Valid ? x.IPAddress.String : (x.ip_address||'');
+            const spd = x.DownloadSpeed && x.DownloadSpeed.Valid ? x.DownloadSpeed.Float64 : (x.download_speed||0);
+            tr.innerHTML = `<td>${x.TestTime||x.test_time||''}</td>
+              <td>${x.NodeName||x.node_name||''}</td>
+              <td>${spd}</td>
+              <td>${ip}</td>`;
+            tb.appendChild(tr);
+          });
+          document.getElementById('pginfo').textContent = `Page ${page}, Total ${d.total||0}`;
+        }).catch(e=> showError(e.message));
+    }
+    document.getElementById('btnQuery').onclick=()=>{ page=1; load(); };
+    document.getElementById('prev').onclick=()=>{ if(page>1){ page--; load(); } };
+    document.getElementById('next').onclick=()=>{ page++; load(); };
+    load();
+  </script>
+</body>
+</html>
