@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log/slog"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -14,8 +13,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/beck-8/subs-check/config"
-	"github.com/beck-8/subs-check/utils"
+	"github.com/twj0/subcheck/config"
+	"github.com/twj0/subcheck/utils"
 )
 
 type Result map[string]any
@@ -56,23 +55,22 @@ func Run(ctx context.Context, proxy string) (Result, error) {
 		return nil, fmt.Errorf("bash not found in PATH; please install Git Bash or provide a full bash path: %w", err)
 	}
 
-	cmd := exec.CommandContext(ctx, cmdName, args...)
-	cmd.Dir = filepath.Dir(scriptPath)
-	var stdout, stderr bytes.Buffer
-	cmd.Stdout = &stdout
-	cmd.Stderr = &stderr
-
-	if deadline, ok := ctx.Deadline(); !ok {
+	timeoutCtx := ctx
+	if _, ok := timeoutCtx.Deadline(); !ok {
 		timeout := time.Duration(cfg.Timeout) * time.Second
 		if timeout <= 0 {
 			timeout = 300 * time.Second
 		}
 		var cancel context.CancelFunc
-		ctx, cancel = context.WithTimeout(context.Background(), timeout)
+		timeoutCtx, cancel = context.WithTimeout(context.Background(), timeout)
 		defer cancel()
-		cmd = exec.CommandContext(ctx, cmdName, args...)
-		cmd.Dir = filepath.Dir(scriptPath)
 	}
+
+	cmd := exec.CommandContext(timeoutCtx, cmdName, args...)
+	cmd.Dir = filepath.Dir(scriptPath)
+	var stdout, stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
 
 	if err := cmd.Run(); err != nil {
 		return nil, fmt.Errorf("ip.sh failed: %w; stderr: %s", err, strings.TrimSpace(stderr.String()))

@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"net/http"
 	"log/slog"
 	"os"
 	"path/filepath"
@@ -15,18 +14,18 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/fsnotify/fsnotify"
+	"github.com/robfig/cron/v3"
 	"github.com/twj0/subcheck/app/monitor"
 	"github.com/twj0/subcheck/assets"
 	"github.com/twj0/subcheck/check"
+	plat "github.com/twj0/subcheck/check/platform"
 	"github.com/twj0/subcheck/config"
 	"github.com/twj0/subcheck/ipcheck"
-	"github.com/twj0/subcheck/save"
-	plat "github.com/twj0/subcheck/check/platform"
-	"github.com/twj0/subcheck/storage"
 	proxyutils "github.com/twj0/subcheck/proxy"
+	"github.com/twj0/subcheck/save"
+	"github.com/twj0/subcheck/storage"
 	"github.com/twj0/subcheck/utils"
-	"github.com/fsnotify/fsnotify"
-	"github.com/robfig/cron/v3"
 )
 
 // App 结构体用于管理应用程序状态
@@ -130,13 +129,19 @@ func (app *App) triggerIPCheck() {
 			sem <- struct{}{}
 			wg.Add(1)
 			go func(mp map[string]any) {
-				defer func(){ <-sem; wg.Done() }()
+				defer func() { <-sem; wg.Done() }()
 				pc := check.CreateClient(mp)
-				if pc == nil { return }
+				if pc == nil {
+					return
+				}
 				country, ip := proxyutils.GetProxyCountry(pc.Client)
-				if ip == "" { return }
+				if ip == "" {
+					return
+				}
 				risk, err := plat.CheckIPRisk(pc.Client, ip)
-				if err != nil { return }
+				if err != nil {
+					return
+				}
 				var score int
 				if len(risk) > 0 && risk[len(risk)-1] == '%' {
 					fmt.Sscanf(risk, "%d%%", &score)
@@ -152,7 +157,9 @@ func (app *App) triggerIPCheck() {
 					case s <= 75:
 						return "High"
 					default:
-						if s > 0 { return "VeryHigh" }
+						if s > 0 {
+							return "VeryHigh"
+						}
 						return "Unknown"
 					}
 				}(score)

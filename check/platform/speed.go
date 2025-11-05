@@ -9,9 +9,9 @@ import (
 
 	"log/slog"
 
-	"github.com/beck-8/subs-check/config"
 	"github.com/juju/ratelimit"
 	"github.com/metacubex/mihomo/common/convert"
+	"github.com/twj0/subcheck/config"
 )
 
 func CheckSpeed(httpClient *http.Client, bucket *ratelimit.Bucket) (int, int64, error) {

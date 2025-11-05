@@ -2,6 +2,7 @@ package app
 
 import (
 	"bufio"
+	"context"
 	"crypto/subtle"
 	"fmt"
 	"html/template"
@@ -12,11 +13,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/beck-8/subs-check/check"
-	"github.com/beck-8/subs-check/config"
-	"github.com/beck-8/subs-check/storage"
-	"github.com/beck-8/subs-check/save/method"
 	"github.com/gin-gonic/gin"
+	"github.com/twj0/subcheck/check"
+	"github.com/twj0/subcheck/config"
+	"github.com/twj0/subcheck/save/method"
+	"github.com/twj0/subcheck/storage"
 	"gopkg.in/yaml.v3"
 )
 
@@ -233,7 +234,7 @@ func (app *App) getIPQualityResults(c *gin.Context) {
 	risk := strings.TrimSpace(c.Query("risk"))
 	sortBy := strings.TrimSpace(c.Query("sort_by"))
 	sortDir := strings.TrimSpace(c.Query("sort_dir"))
-	ctx, cancel := time.WithTimeout(c.Request.Context(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
 	defer cancel()
 	items, total, err := storage.QueryIPQualityResults(ctx, page, size, ip, country, risk, sortBy, sortDir)
 	if err != nil {
@@ -260,7 +261,7 @@ func (app *App) getSpeedResults(c *gin.Context) {
 			maxP = &f
 		}
 	}
-	ctx, cancel := time.WithTimeout(c.Request.Context(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
 	defer cancel()
 	items, total, err := storage.QuerySpeedResults(ctx, page, size, node, minP, maxP, sortBy, sortDir)
 	if err != nil {
@@ -271,7 +272,7 @@ func (app *App) getSpeedResults(c *gin.Context) {
 }
 
 func (app *App) getDashboardStats(c *gin.Context) {
-	ctx, cancel := time.WithTimeout(c.Request.Context(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
 	defer cancel()
 	d, err := storage.GetDashboard(ctx)
 	if err != nil {
@@ -284,7 +285,7 @@ func (app *App) getDashboardStats(c *gin.Context) {
 func (app *App) listSubscriptions(c *gin.Context) {
 	page, _ := strconv.Atoi(c.Query("page"))
 	size, _ := strconv.Atoi(c.Query("page_size"))
-	ctx, cancel := time.WithTimeout(c.Request.Context(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
 	defer cancel()
 	list, total, err := storage.ListSubscriptions(ctx, page, size)
 	if err != nil {
@@ -304,7 +305,7 @@ func (app *App) createSubscription(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid body"})
 		return
 	}
-	ctx, cancel := time.WithTimeout(c.Request.Context(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
 	defer cancel()
 	id, err := storage.CreateSubscription(ctx, strings.TrimSpace(req.Name), strings.TrimSpace(req.URL), req.Enabled)
 	if err != nil {
@@ -329,7 +330,7 @@ func (app *App) updateSubscription(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid body"})
 		return
 	}
-	ctx, cancel := time.WithTimeout(c.Request.Context(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
 	defer cancel()
 	if err := storage.UpdateSubscription(ctx, id, strings.TrimSpace(req.Name), strings.TrimSpace(req.URL), req.Enabled); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -344,7 +345,7 @@ func (app *App) deleteSubscription(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id"})
 		return
 	}
-	ctx, cancel := time.WithTimeout(c.Request.Context(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
 	defer cancel()
 	if err := storage.DeleteSubscription(ctx, id); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})

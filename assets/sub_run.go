@@ -15,10 +15,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/beck-8/subs-check/config"
-	"github.com/beck-8/subs-check/save/method"
 	"github.com/klauspost/compress/zstd"
 	"github.com/shirou/gopsutil/v4/process"
+	"github.com/twj0/subcheck/config"
+	"github.com/twj0/subcheck/save/method"
 	"gopkg.in/natefinch/lumberjack.v2"
 )
 

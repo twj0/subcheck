@@ -16,12 +16,12 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/beck-8/subs-check/check/platform"
-	"github.com/beck-8/subs-check/config"
-	proxyutils "github.com/beck-8/subs-check/proxy"
 	"github.com/juju/ratelimit"
 	"github.com/metacubex/mihomo/adapter"
 	"github.com/metacubex/mihomo/constant"
+	"github.com/twj0/subcheck/check/platform"
+	"github.com/twj0/subcheck/config"
+	proxyutils "github.com/twj0/subcheck/proxy"
 )
 
 // Result 存储节点检测结果

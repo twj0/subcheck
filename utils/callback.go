@@ -7,7 +7,7 @@ import (
 	"os/exec"
 	"path/filepath"
 
-	"github.com/beck-8/subs-check/config"
+	"github.com/twj0/subcheck/config"
 )
 
 // ExecuteCallback 执行回调脚本

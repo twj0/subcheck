@@ -17,56 +17,56 @@ type Subscription struct {
 }
 
 func QueryTopNProxyJSONs(ctx context.Context, selectBy string, n int, windowHours int) ([]string, error) {
-    if n <= 0 {
-        n = 10
-    }
-    if windowHours <= 0 {
-        windowHours = 24
-    }
-    field := "download_speed"
-    switch strings.ToLower(selectBy) {
-    case "delay":
-        field = "delay"
-    case "download_speed":
-        field = "download_speed"
-    default:
-        // fallback
-        field = "download_speed"
-    }
-    order := "DESC"
-    if field == "delay" {
-        order = "ASC"
-    }
-    q := `SELECT proxy_json FROM speed_test_results WHERE proxy_json IS NOT NULL AND proxy_json != '' AND test_time >= datetime('now', ? ) ORDER BY ` + field + ` ` + order + ` LIMIT ?`
-    argWindow := fmt.Sprintf("-%d hour", windowHours)
-    rows, err := DB.QueryContext(ctx, q, argWindow, n)
-    if err != nil {
-        return nil, err
-    }
-    defer rows.Close()
-    var out []string
-    for rows.Next() {
-        var s sql.NullString
-        if err := rows.Scan(&s); err != nil {
-            return nil, err
-        }
-        if s.Valid && s.String != "" {
-            out = append(out, s.String)
-        }
-    }
-    return out, nil
+	if n <= 0 {
+		n = 10
+	}
+	if windowHours <= 0 {
+		windowHours = 24
+	}
+	field := "download_speed"
+	switch strings.ToLower(selectBy) {
+	case "delay":
+		field = "delay"
+	case "download_speed":
+		field = "download_speed"
+	default:
+		// fallback
+		field = "download_speed"
+	}
+	order := "DESC"
+	if field == "delay" {
+		order = "ASC"
+	}
+	q := `SELECT proxy_json FROM speed_test_results WHERE proxy_json IS NOT NULL AND proxy_json != '' AND test_time >= datetime('now', ? ) ORDER BY ` + field + ` ` + order + ` LIMIT ?`
+	argWindow := fmt.Sprintf("-%d hour", windowHours)
+	rows, err := DB.QueryContext(ctx, q, argWindow, n)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []string
+	for rows.Next() {
+		var s sql.NullString
+		if err := rows.Scan(&s); err != nil {
+			return nil, err
+		}
+		if s.Valid && s.String != "" {
+			out = append(out, s.String)
+		}
+	}
+	return out, nil
 }
 
 type SpeedResult struct {
-    ID             int64
-    SubscriptionID sql.NullInt64
-    NodeName       string
-    Delay          sql.NullInt64
-    DownloadSpeed  sql.NullFloat64
-    UploadSpeed    sql.NullFloat64
-    IPAddress      sql.NullString
-    ProxyJSON      sql.NullString
-    TestTime       time.Time
+	ID             int64
+	SubscriptionID sql.NullInt64
+	NodeName       string
+	Delay          sql.NullInt64
+	DownloadSpeed  sql.NullFloat64
+	UploadSpeed    sql.NullFloat64
+	IPAddress      sql.NullString
+	ProxyJSON      sql.NullString
+	TestTime       time.Time
 }
 
 type IPQualityResult struct {
@@ -129,8 +129,8 @@ func ListSubscriptions(ctx context.Context, page, pageSize int) ([]Subscription,
 }
 
 func SaveSpeedResult(ctx context.Context, subscriptionID sql.NullInt64, nodeName string, delay sql.NullInt64, download float64, upload sql.NullFloat64, ipAddr sql.NullString, proxyJSON sql.NullString) error {
-    _, err := DB.ExecContext(ctx, `INSERT INTO speed_test_results (subscription_id, node_name, delay, download_speed, upload_speed, ip_address, proxy_json) VALUES (?,?,?,?,?,?,?)`, subscriptionID, nodeName, delay, download, upload, ipAddr, proxyJSON)
-    return err
+	_, err := DB.ExecContext(ctx, `INSERT INTO speed_test_results (subscription_id, node_name, delay, download_speed, upload_speed, ip_address, proxy_json) VALUES (?,?,?,?,?,?,?)`, subscriptionID, nodeName, delay, download, upload, ipAddr, proxyJSON)
+	return err
 }
 
 func QuerySpeedResults(ctx context.Context, page, pageSize int, nodeLike string, minSpeed, maxSpeed *float64, sortBy, sortDir string) ([]SpeedResult, int64, error) {
@@ -171,7 +171,7 @@ func QuerySpeedResults(ctx context.Context, page, pageSize int, nodeLike string,
 		return nil, 0, err
 	}
 	offset := (page - 1) * pageSize
-	    rows, err := DB.QueryContext(ctx, `SELECT id,subscription_id,node_name,delay,download_speed,upload_speed,ip_address,proxy_json,test_time FROM speed_test_results`+queryWhere+` ORDER BY `+sortBy+` `+sortDir+` LIMIT ? OFFSET ?`, append(args, pageSize, offset)...)
+	rows, err := DB.QueryContext(ctx, `SELECT id,subscription_id,node_name,delay,download_speed,upload_speed,ip_address,proxy_json,test_time FROM speed_test_results`+queryWhere+` ORDER BY `+sortBy+` `+sortDir+` LIMIT ? OFFSET ?`, append(args, pageSize, offset)...)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -179,12 +179,12 @@ func QuerySpeedResults(ctx context.Context, page, pageSize int, nodeLike string,
 	var list []SpeedResult
 	for rows.Next() {
 		var r SpeedResult
-		        if err := rows.Scan(&r.ID, &r.SubscriptionID, &r.NodeName, &r.Delay, &r.DownloadSpeed, &r.UploadSpeed, &r.IPAddress, &r.ProxyJSON, &r.TestTime); err != nil {
-            return nil, 0, err
-        }
-        list = append(list, r)
-    }
-    return list, total, nil
+		if err := rows.Scan(&r.ID, &r.SubscriptionID, &r.NodeName, &r.Delay, &r.DownloadSpeed, &r.UploadSpeed, &r.IPAddress, &r.ProxyJSON, &r.TestTime); err != nil {
+			return nil, 0, err
+		}
+		list = append(list, r)
+	}
+	return list, total, nil
 }
 
 func QueryIPQualityResults(ctx context.Context, page, pageSize int, ip, country, risk, sortBy, sortDir string) ([]IPQualityResult, int64, error) {
@@ -285,7 +285,7 @@ func GetDashboard(ctx context.Context) (Dashboard, error) {
 }
 
 func QueryTopNSpeedIPs(ctx context.Context, n int) ([]string, error) {
-    rows, err := DB.QueryContext(ctx, `SELECT ip_address FROM speed_test_results WHERE ip_address IS NOT NULL AND ip_address != '' ORDER BY download_speed DESC LIMIT ?`, n)
+	rows, err := DB.QueryContext(ctx, `SELECT ip_address FROM speed_test_results WHERE ip_address IS NOT NULL AND ip_address != '' ORDER BY download_speed DESC LIMIT ?`, n)
 	if err != nil {
 		return nil, err
 	}

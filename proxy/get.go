@@ -14,10 +14,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/beck-8/subs-check/config"
-	"github.com/beck-8/subs-check/utils"
 	"github.com/metacubex/mihomo/common/convert"
 	"github.com/samber/lo"
+	"github.com/twj0/subcheck/config"
+	"github.com/twj0/subcheck/utils"
 	"gopkg.in/yaml.v3"
 )
 

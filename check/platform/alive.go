@@ -3,7 +3,7 @@ package platform
 import (
 	"net/http"
 
-	"github.com/beck-8/subs-check/config"
+	"github.com/twj0/subcheck/config"
 )
 
 func CheckAlive(httpClient *http.Client) (bool, error) {
