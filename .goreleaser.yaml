@@ -1,6 +1,9 @@
 before:
   hooks:
     - go mod tidy
+
+project_name: subcheck
+
 release:
   prerelease: auto  # 自动识别 beta、rc 作为预发布
 

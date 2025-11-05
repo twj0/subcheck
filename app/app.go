@@ -15,16 +15,16 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/beck-8/subs-check/app/monitor"
-	"github.com/beck-8/subs-check/assets"
-	"github.com/beck-8/subs-check/check"
-	"github.com/beck-8/subs-check/config"
-	"github.com/beck-8/subs-check/ipcheck"
-	"github.com/beck-8/subs-check/save"
-	plat "github.com/beck-8/subs-check/check/platform"
-	"github.com/beck-8/subs-check/storage"
-	proxyutils "github.com/beck-8/subs-check/proxy"
-	"github.com/beck-8/subs-check/utils"
+	"github.com/twj0/subcheck/app/monitor"
+	"github.com/twj0/subcheck/assets"
+	"github.com/twj0/subcheck/check"
+	"github.com/twj0/subcheck/config"
+	"github.com/twj0/subcheck/ipcheck"
+	"github.com/twj0/subcheck/save"
+	plat "github.com/twj0/subcheck/check/platform"
+	"github.com/twj0/subcheck/storage"
+	proxyutils "github.com/twj0/subcheck/proxy"
+	"github.com/twj0/subcheck/utils"
 	"github.com/fsnotify/fsnotify"
 	"github.com/robfig/cron/v3"
 )
@@ -446,5 +446,5 @@ func (app *App) checkProxies() error {
 }
 
 func TempLog() string {
-	return filepath.Join(os.TempDir(), "subs-check.log")
+	return filepath.Join(os.TempDir(), "subcheck.log")
 }
