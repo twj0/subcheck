@@ -10,34 +10,29 @@
 ## 2. 构建与运行
 
 ### 配置
-1.  将 `speed-check/config/config.example.yaml` 复制为 `speed-check/config/config.yaml`。
-2.  编辑 `config.yaml`，将你的订阅链接添加到 `sub-urls` 列表中。
-3.  根据需要自定义其他设置，如 `check-interval` (检查间隔), `min-speed` (最低速度), `save-method` (保存方式) 和通知设置。
+1.  将 `config/config.example.yaml` 复制为 `config/config.yaml`
+2.  编辑 `config.yaml`，将你的订阅链接添加到 `sub-urls` 列表中
+3.  根据需要自定义其他设置，如 `check-interval` (检查间隔), `min-speed` (最低速度), `save-method` (保存方式) 和通知设置
 
 ### 从源码构建
 项目使用 `Makefile` 来简化构建过程。
 
 - **为当前环境构建:**
   ```shell
-  cd speed-check
   make build
   ```
 - **为所有目标平台构建 (Linux AMD64, ARM64):**
   ```shell
-  cd speed-check
   make build-all
   ```
 
 ### 运行程序
 - **从源码运行:**
   ```shell
-  cd speed-check
   go run . -f ./config/config.yaml
   ```
 - **从二进制文件运行:**
-  构建完成后，运行生成的可执行文件：
   ```shell
-  cd speed-check
   ./subcheck -f ./config/config.yaml
   ```
 
