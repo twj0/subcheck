@@ -12,9 +12,8 @@ NC="\033[0m"
 
 # 定义项目信息
 GITHUB_REPO="twj0/subcheck"
-INSTALL_DIR="/usr/local/bin"
+INSTALL_DIR="/opt/subcheck"
 CONFIG_DIR="/etc/subcheck"
-BINARY_NAME="subcheck"
 CONFIG_NAME="config.yaml"
 SERVICE_NAME="subcheck.service"
 
@@ -23,51 +22,28 @@ SERVICE_NAME="subcheck.service"
 
 # 检查并安装依赖
 install_deps() {
-    echo -e "${BLUE}正在检查并安装依赖 (curl, tar)...${NC}"
-    if ! command -v curl &> /dev/null || ! command -v tar &> /dev/null; then
-        apt-get update && apt-get install -y curl tar
+    echo -e "${BLUE}正在检查并安装依赖...${NC}"
+    if ! command -v git &> /dev/null || ! command -v go &> /dev/null; then
+        apt-get update && apt-get install -y git golang-go
     else
         echo -e "${GREEN}依赖已满足。${NC}"
     fi
 }
 
-# 获取系统架构
-get_arch() {
-    ARCH=$(uname -m)
-    case $ARCH in
-        x86_64) ARCH="amd64";;
-        aarch64) ARCH="arm64";;
-        *) echo -e "${RED}错误：不支持的架构: $ARCH${NC}"; exit 1;;
-    esac
-    echo -e "${GREEN}检测到系统架构: $ARCH${NC}"
-}
-
-# 下载并安装subcheck
+# 克隆并安装subcheck
 install_subcheck() {
-    echo -e "${BLUE}正在从 GitHub 下载最新版本的 subcheck...${NC}"
-    LATEST_URL=$(curl -s https://api.github.com/repos/$GITHUB_REPO/releases/latest | grep "browser_download_url.*linux_${ARCH}.tar.gz" | cut -d '"' -f 4)
+    echo -e "${BLUE}正在从 GitHub 克隆 subcheck 源码...${NC}"
 
-    if [ -z "$LATEST_URL" ]; then
-        echo -e "${RED}错误：无法找到适用于 linux_${ARCH} 的最新 Release 版本。${NC}"
-        echo -e "${YELLOW}请检查 https://github.com/$GITHUB_REPO/releases 是否有对应的压缩包。${NC}"
-        exit 1
-    fi
-
-    TEMP_FILE=$(mktemp)
-    curl -L -o "$TEMP_FILE" "$LATEST_URL"
-
-    echo -e "${BLUE}正在解压并安装二进制文件到 ${INSTALL_DIR}...${NC}"
-    tar -xzf "$TEMP_FILE" -C /tmp/
-    install "/tmp/${BINARY_NAME}" "${INSTALL_DIR}/"
-    rm -f "$TEMP_FILE"
-    rm -f "/tmp/${BINARY_NAME}"
-
-    if [ -f "${INSTALL_DIR}/${BINARY_NAME}" ]; then
-        echo -e "${GREEN}subcheck 已成功安装到 ${INSTALL_DIR}/${BINARY_NAME}${NC}"
+    if [ -d "$INSTALL_DIR" ]; then
+        echo -e "${YELLOW}检测到已存在的安装目录，正在更新...${NC}"
+        cd "$INSTALL_DIR"
+        git pull
     else
-        echo -e "${RED}错误：文件安装失败！${NC}"
-        exit 1
+        git clone "https://github.com/${GITHUB_REPO}.git" "$INSTALL_DIR"
+        cd "$INSTALL_DIR"
     fi
+
+    echo -e "${GREEN}源码已准备完成${NC}"
 }
 
 # 创建配置文件
@@ -112,7 +88,8 @@ After=network.target
 [Service]
 Type=simple
 User=root
-ExecStart=${INSTALL_DIR}/${BINARY_NAME} -f ${CONFIG_DIR}/${CONFIG_NAME}
+WorkingDirectory=${INSTALL_DIR}
+ExecStart=/usr/bin/go run . -f ${CONFIG_DIR}/${CONFIG_NAME}
 Restart=on-failure
 RestartSec=5s
 
@@ -128,7 +105,6 @@ EOF
 # 主函数
 main() {
     install_deps
-    get_arch
     install_subcheck
     create_config
     create_systemd_service
