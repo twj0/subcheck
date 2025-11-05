@@ -6,8 +6,24 @@
 
 `subcheck` 旨在简化代理节点的管理流程，通过丰富的测试功能筛选出高质量、可用的节点，并将其转换为多种主流客户端支持的格式。
 
+## 2. 快速安装
 
-## 2. 构建与运行
+### 一键安装（推荐）
+在 Ubuntu/Debian 系统上使用以下命令一键安装：
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/twj0/subcheck/master/deploy.sh | sudo bash
+```
+
+或使用 wget：
+
+```bash
+wget -qO- https://raw.githubusercontent.com/twj0/subcheck/master/deploy.sh | sudo bash
+```
+
+安装过程中可以输入订阅链接，或直接回车使用默认配置。安装完成后会提示是否立即启动服务。
+
+## 3. 手动构建与运行
 
 ### 配置
 1.  将 `config/config.example.yaml` 复制为 `config/config.yaml`

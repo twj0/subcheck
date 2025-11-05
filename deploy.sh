@@ -75,15 +75,30 @@ create_config() {
     mkdir -p $CONFIG_DIR
     if [ -f "${CONFIG_DIR}/${CONFIG_NAME}" ]; then
         echo -e "${YELLOW}检测到已存在的配置文件，跳过创建。${NC}"
-        echo -e "${YELLOW}如果需要重新生成，请先删除 ${CONFIG_DIR}/${CONFIG_NAME}${NC}"
-    else
-        echo -e "${BLUE}正在创建默认配置文件...${NC}"
-        # 从 GitHub 下载最新的 config.example.yaml
-        EXAMPLE_CONFIG_URL="https://raw.githubusercontent.com/twj0/subcheck/main/speed-check/config/config.example.yaml"
-        curl -s -o "${CONFIG_DIR}/${CONFIG_NAME}" "$EXAMPLE_CONFIG_URL"
-        echo -e "${GREEN}配置文件已创建在 ${CONFIG_DIR}/${CONFIG_NAME}${NC}"
-        echo -e "${YELLOW}请务必修改此文件，填入您的订阅链接和相关配置！${NC}"
+        return
     fi
+
+    echo -e "${BLUE}正在创建配置文件...${NC}"
+    EXAMPLE_CONFIG_URL="https://raw.githubusercontent.com/twj0/subcheck/master/config/config.example.yaml"
+    curl -s -o "${CONFIG_DIR}/${CONFIG_NAME}" "$EXAMPLE_CONFIG_URL"
+
+    echo -e "${GREEN}请输入您的订阅链接 (多个链接用空格分隔，直接回车跳过):${NC}"
+    read -r SUB_URLS
+
+    if [ -n "$SUB_URLS" ]; then
+        # 将空格分隔的链接转换为 YAML 数组格式
+        echo "sub-urls:" > /tmp/sub_urls.tmp
+        for url in $SUB_URLS; do
+            echo "  - $url" >> /tmp/sub_urls.tmp
+        done
+        # 替换配置文件中的 sub-urls 部分
+        sed -i '/^sub-urls:/,/^[a-z-]*:/{ /^sub-urls:/r /tmp/sub_urls.tmp
+d; /^  -/d; }' "${CONFIG_DIR}/${CONFIG_NAME}"
+        rm -f /tmp/sub_urls.tmp
+        echo -e "${GREEN}订阅链接已配置${NC}"
+    fi
+
+    echo -e "${GREEN}配置文件已创建: ${CONFIG_DIR}/${CONFIG_NAME}${NC}"
 }
 
 # 创建 systemd 服务
@@ -119,15 +134,20 @@ main() {
     create_systemd_service
 
     echo -e "\n${GREEN}🎉 subcheck 安装完成！ 🎉${NC}"
-    echo -e "\n${YELLOW}重要提示:${NC}"
-    echo -e "1. 配置文件位于: ${GREEN}${CONFIG_DIR}/${CONFIG_NAME}${NC}"
-    echo -e "   ${YELLOW}请立即编辑此文件，填入您的订阅链接等信息。${NC}"
-    echo -e "2. 使用以下命令管理服务:"
-    echo -e "   - 启动服务: ${GREEN}systemctl start ${SERVICE_NAME}${NC}"
-    echo -e "   - 查看状态: ${GREEN}systemctl status ${SERVICE_NAME}${NC}"
-    echo -e "   - 查看日志: ${GREEN}journalctl -u ${SERVICE_NAME} -f${NC}"
-    echo -e "   - 停止服务: ${GREEN}systemctl stop ${SERVICE_NAME}${NC}"
-    echo -e "\n请按照 ${BLUE}README.md${NC} 的指引继续操作。"
+    echo -e "\n${YELLOW}服务管理命令:${NC}"
+    echo -e "  启动: ${GREEN}systemctl start ${SERVICE_NAME}${NC}"
+    echo -e "  状态: ${GREEN}systemctl status ${SERVICE_NAME}${NC}"
+    echo -e "  日志: ${GREEN}journalctl -u ${SERVICE_NAME} -f${NC}"
+    echo -e "  停止: ${GREEN}systemctl stop ${SERVICE_NAME}${NC}"
+    echo -e "\n${YELLOW}配置文件: ${GREEN}${CONFIG_DIR}/${CONFIG_NAME}${NC}"
+    echo -e "\n${GREEN}现在启动服务? (Y/n):${NC}"
+    read -r START_NOW
+    if [[ "$START_NOW" != "n" && "$START_NOW" != "N" ]]; then
+        systemctl start ${SERVICE_NAME}
+        echo -e "${GREEN}服务已启动！${NC}"
+        sleep 2
+        systemctl status ${SERVICE_NAME} --no-pager
+    fi
 }
 
 # 执行主函数
