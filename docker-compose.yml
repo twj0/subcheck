@@ -1,0 +1,14 @@
+services:
+  subcheck:
+    build:
+      context: .
+    image: subcheck:latest
+    container_name: subcheck
+    ports:
+      - "14567:14567"
+    volumes:
+      - ./config:/app/config
+      - ./output:/app/output
+    environment:
+      - LOG_LEVEL=info
+    restart: always
