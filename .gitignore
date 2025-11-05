@@ -5,7 +5,8 @@ test
 output/*
 subs-check*
 mihomo-check*
-
+todo
+rule
 .idea
 .vscode
 .lingma
