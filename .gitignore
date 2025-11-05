@@ -14,7 +14,7 @@ rule
 .DS_Store
 gemini.md
 claude.md
-
+.claude
 # Ignore images
 *.png
 *.jpg
