@@ -16,18 +16,6 @@ INSTALL_DIR="/opt/subcheck"
 CONFIG_DIR="/etc/subcheck"
 CONFIG_NAME="config.yaml"
 SERVICE_NAME="subcheck.service"
-BINARY_PATH="/usr/local/bin/subcheck"
-
-detect_goarch() {
-    local arch
-    arch=$(uname -m)
-    case "$arch" in
-        x86_64) echo "amd64" ;;
-        aarch64|arm64) echo "arm64" ;;
-        armv7l|armv6l) echo "arm" ;;
-        *) echo "$arch" ;;
-    esac
-}
 
 # 检查root权限
 [[ $EUID -ne 0 ]] && echo -e "${RED}错误：请使用root用户运行此脚本！${NC}" && exit 1
@@ -42,28 +30,20 @@ install_deps() {
     fi
 }
 
-build_binary() {
-    echo -e "${BLUE}正在构建可执行文件...${NC}"
+prepare_project() {
+    echo -e "${BLUE}正在准备 Go 依赖...${NC}"
     cd "$INSTALL_DIR"
-
     if ! go mod tidy; then
         echo -e "${RED}go mod tidy 失败，请检查网络或Go环境${NC}"
         exit 1
     fi
 
-    local version commit arch
-    version=$(git describe --tags --always --dirty --abbrev=7 2>/dev/null || echo "dev")
-    commit=$(git rev-parse --short HEAD 2>/dev/null || echo "local")
-    arch=$(detect_goarch)
-
-    if ! CGO_ENABLED=0 GOOS=linux GOARCH="$arch" \
-        go build -trimpath -ldflags "-s -w -X main.Version=${version} -X main.CurrentCommit=${commit}" -o "$BINARY_PATH"; then
-        echo -e "${RED}构建可执行文件失败${NC}"
+    if ! go mod download; then
+        echo -e "${RED}下载 Go 依赖失败${NC}"
         exit 1
     fi
 
-    chmod +x "$BINARY_PATH"
-    echo -e "${GREEN}可执行文件已生成: ${BINARY_PATH}${NC}"
+    echo -e "${GREEN}依赖准备完成${NC}"
 }
 
 # 克隆并安装subcheck
@@ -125,7 +105,7 @@ After=network.target
 Type=simple
 User=root
 WorkingDirectory=${INSTALL_DIR}
-ExecStart=${BINARY_PATH} -f ${CONFIG_DIR}/${CONFIG_NAME}
+ExecStart=/usr/bin/env bash -c 'cd ${INSTALL_DIR} && go run . -f ${CONFIG_DIR}/${CONFIG_NAME}'
 Restart=on-failure
 RestartSec=5s
 
@@ -142,7 +122,7 @@ EOF
 main() {
     install_deps
     install_subcheck
-    build_binary
+    prepare_project
     create_config
     create_systemd_service
 
