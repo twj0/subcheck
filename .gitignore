@@ -24,3 +24,4 @@ claude.md
 # Ignore documentation and other data files
 speed-check/doc/
 ip-quality-check/
+speed-check/README.md
