@@ -17,7 +17,7 @@ check-interval: 120
 # IP质量检测
 ip-check:
   enabled: true
-  script-path: "ip-quality-check/ip.sh"
+  script-path: "ipcheck/ip.sh"
   timeout: 300
   concurrent: 3
   monthly-run: true

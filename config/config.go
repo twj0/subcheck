@@ -90,7 +90,7 @@ var GlobalConfig = &Config{
 	SubUrlsGetUA:       "clash.meta (https://github.com/twj0/subcheck)",
 	IpCheck: IpCheckConfig{
 		Enabled:     true,
-		ScriptPath:  "ip-quality-check/ip.sh",
+		ScriptPath:  "ipcheck/ip.sh",
 		Timeout:     300,
 		Concurrent:  3,
 		MonthlyRun:  true,
