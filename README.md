@@ -6,74 +6,43 @@
 
 `subcheck` 旨在简化代理节点的管理流程，通过丰富的测试功能筛选出高质量、可用的节点，并将其转换为多种主流客户端支持的格式。
 
-## 2. 快速安装
+## 2. 使用指南
 
-### 一键安装（推荐）
-在 Ubuntu/Debian 系统上使用以下命令一键安装：
+### 2.1 推荐：直接使用发布版二进制
 
-```bash
-curl -fsSL https://raw.githubusercontent.com/twj0/subcheck/master/deploy.sh | sudo bash
-```
-
-或使用 wget：
+- **确认架构**：在目标 VPS 或服务器上执行 `uname -m`（可能返回 `x86_64`、`aarch64` 等），并在 [GitHub Releases](https://github.com/twj0/subcheck/releases) 页面选择匹配架构的最新版本。
+- **下载最新版本**：以 Linux AMD64 为例，将 `VERSION` 替换为最新标签，例如 `v0.0.001`。
 
 ```bash
-wget -qO- https://raw.githubusercontent.com/twj0/subcheck/master/deploy.sh | sudo bash
+wget https://github.com/twj0/subcheck/releases/download/subcheck_linux_amd64
+chmod +x subcheck_linux_amd64
 ```
 
-安装过程中可以输入订阅链接，或直接回车使用默认配置。安装完成后会提示是否立即启动服务。
+- **准备配置**：复制模板并按需修改订阅链接、监听端口等参数。
 
-## 3. 手动构建与运行
+```bash
+mkdir -p ~/subcheck/config
+cp config/config.example.yaml ~/subcheck/config/config.yaml
+vim ~/subcheck/config/config.yaml
+```
 
-### 配置
-1.  将 `config/config.example.yaml` 复制为 `config/config.yaml`
-2.  编辑 `config.yaml`，将你的订阅链接添加到 `sub-urls` 列表中
-3.  根据需要自定义其他设置，如 `check-interval` (检查间隔), `min-speed` (最低速度), `save-method` (保存方式) 和通知设置
+- **运行**：通过配置文件启动。监听端口由 `config.yaml` 中的 `listen-port` 控制，Web 面板位于 `http://<VPS_IP>:<端口>/admin`。
 
-### 从源码构建
-项目使用 `Makefile` 来简化构建过程。
+```bash
+./subcheck_linux_amd64 -f ~/subcheck/config/config.yaml
+```
 
-- **为当前环境构建:**
-  ```shell
-  make build
-  ```
-- **为所有目标平台构建 (Linux AMD64, ARM64):**
-  ```shell
-  make build-all
-  ```
+> 如需长期运行，可将可执行文件移动到 `/usr/local/bin/subcheck`，并结合 `systemd`、`nohup` 或进程管理工具维护服务。
 
-### 运行程序
-- **从源码运行:**
-  ```shell
-  go run . -f ./config/config.yaml
-  ```
-- **从二进制文件运行:**
-  ```shell
-  ./subcheck -f ./config/config.yaml
-  ```
+### 2.2 Docker 部署（可选）
 
-程序将在启动时执行一次初始检查（除非设置了 Cron 计划），然后根据配置的计划周期性运行。
-
-## 4. Docker 部署
-
-### 构建镜像
-在已有 Docker 的环境中进入项目根目录，执行：
+- **构建镜像**：
 
 ```bash
 docker build -t subcheck:latest .
 ```
 
-构建时可通过以下构建参数覆盖版本信息：
-
-```bash
-docker build \
-  --build-arg VERSION=v1.0.0 \
-  --build-arg COMMIT=$(git rev-parse --short HEAD) \
-  -t subcheck:latest .
-```
-
-### 启动容器
-默认镜像会在容器内复制 `config/` 与 `assets/` 目录。首次运行前请修改 `config/config.yaml` 或挂载外部配置目录。
+- **启动容器**：挂载本地配置与输出目录，便于管理。
 
 ```bash
 docker run -d --name subcheck \
@@ -84,15 +53,7 @@ docker run -d --name subcheck \
   subcheck:latest
 ```
 
-- `-p 14567:14567`：将 Web UI 映射到宿主机端口，可按需调整。
-- `-v $(pwd)/config:/app/config`：挂载本地配置目录，便于在宿主机编辑 `config.yaml`。
-- `-v $(pwd)/output:/app/output`：持久化生成的订阅文件（`SaveMethod` 为 `local` 时使用）。
-- 根据需要附加 `-e LOG_LEVEL=debug`、`-e MIHOMO_DEBUG=1` 等环境变量。
-
-容器后台运行后，可通过 `http://<VPS_IP>:14567` 访问管理界面。使用 `docker logs -f subcheck` 查看日志，使用 `docker stop subcheck && docker rm subcheck` 停止并移除容器。
-
-### Docker Compose
-也可使用 `docker-compose.yml` 快速部署：
+- **Docker Compose 示例**：
 
 ```yaml
 services:
@@ -111,7 +72,42 @@ services:
     restart: always
 ```
 
-执行 `docker compose up -d --build` 即可构建并启动服务，后续使用 `docker compose logs -f` 查看日志。
+执行 `docker compose up -d --build` 即可完成部署。
+
+## 3. 本地开发与构建
+
+- **环境要求**：Go `1.24` 及以上、Git、GNU Make（可选）。
+- **克隆与初始化**：
+
+```bash
+git clone https://github.com/twj0/subcheck.git
+cd subcheck
+cp config/config.example.yaml config/config.yaml
+```
+
+- **本地运行**：
+
+```bash
+go run . -f ./config/config.yaml
+```
+
+- **构建golang二进制**：
+
+```powershell
+$env:GOOS="linux"
+$env:GOARCH="amd64"
+$env:CGO_ENABLED="0"
+go build -trimpath -ldflags "-s -w -X main.Version=dev -X main.CurrentCommit=unknown" -o subcheck_linux_amd64
+```
+
+```powershell
+$env:GOOS="linux"
+$env:GOARCH="arm64"
+$env:CGO_ENABLED="0"
+go build -trimpath -ldflags "-s -w -X main.Version=dev -X main.CurrentCommit=unknown" -o subcheck_linux_arm64
+```
+
+
 
 ## 感谢
 - [IPQuality](https://github.com/xykt/IPQuality)
