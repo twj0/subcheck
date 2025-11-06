@@ -23,3 +23,5 @@ claude.md
 
 # Ignore documentation and other data files
 doc/
+subcheck_linux_arm64
+subcheck_linux_amd64
