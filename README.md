@@ -107,21 +107,21 @@ cd subcheck
 cp config/config.example.yaml config/config.yaml
 ```
 
-- **本地运行**：
-
-```bash
-go run . -f ./config/config.yaml
-```
-
 - **构建 Go 二进制**（Windows PowerShell 示例，可按需调整架构）：
 
-- **一键部署脚本**：如需在 Linux 主机上自动获取最新版本、同步配置与 `ipcheck/ip.sh`，可执行：
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/twj0/subcheck/master/deploy.sh | sudo bash
+```powershell
+$env:GOOS="linux"
+$env:GOARCH="arm64"
+$env:CGO_ENABLED="0"
+go build -trimpath -ldflags "-s -w -X main.Version=dev -X main.CurrentCommit=unknown" -o subcheck_linux_arm64
 ```
 
-脚本会基于当前 CPU 架构下载对应二进制、生成 `/etc/subcheck/config.yaml` 与 `/opt/subcheck/ipcheck/ip.sh`，并创建 `systemd` 服务。
+```powershell
+$env:GOOS="linux"
+$env:GOARCH="amd64"
+$env:CGO_ENABLED="0"
+go build -trimpath -ldflags "-s -w -X main.Version=dev -X main.CurrentCommit=unknown" -o subcheck_linux_amd64
+```
 
 
 
