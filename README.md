@@ -8,13 +8,34 @@
 
 ## 2. 使用指南
 
-### 2.1 推荐：直接使用发布版二进制
+### 2.0 快速开始：一键部署脚本
 
-- **确认架构**：在目标 VPS 或服务器上执行 `uname -m`（可能返回 `x86_64`、`aarch64` 等），并在 [GitHub Releases](https://github.com/twj0/subcheck/releases) 页面选择匹配架构的最新版本。
-
+- **执行部署脚本**：在具备 `bash` 与 `systemd` 的 Linux 主机上，可一键完成下载、配置与服务安装。
 
 ```bash
-wget https://github.com/twj0/subcheck/releases/download/0.0.002/subcheck_linux_amd64
+curl -fsSL https://raw.githubusercontent.com/twj0/subcheck/master/deploy.sh | sudo bash
+```
+
+或使用 `wget`：
+
+```bash
+wget -qO- https://raw.githubusercontent.com/twj0/subcheck/master/deploy.sh | sudo bash
+```
+
+- **脚本行为**：自动检测架构选择最新发布版二进制，并同步 `ipcheck/ip.sh` 与 `/etc/subcheck/config.yaml`，最终创建 `subcheck.service` systemd 服务。
+
+### 2.1 推荐：直接使用发布版二进制
+
+- **确认架构**：在目标 VPS 上执行 `uname -m`（可能返回 `x86_64`、`aarch64` 等），并在 [GitHub Releases](https://github.com/twj0/subcheck/releases) 页面选择匹配架构的最新版本（文件名形如 `subcheck_linux_<arch>`）。
+
+- **下载与赋权**：示例以 Linux AMD64 为例，请替换为最新版本号或使用脚本自动获取。
+
+```bash
+VERSION=$(curl -s https://api.github.com/repos/twj0/subcheck/releases/latest | jq -r .tag_name)
+wget https://github.com/twj0/subcheck/releases/download/${VERSION}/subcheck_linux_amd64
+```
+
+```bash
 chmod +x subcheck_linux_amd64
 ```
 
@@ -22,17 +43,18 @@ chmod +x subcheck_linux_amd64
 
 ```bash
 mkdir -p ~/subcheck/config
-cp config/config.example.yaml ~/subcheck/config/config.yaml
-vim ~/subcheck/config/config.yaml
+curl -fsSL -o ~/subcheck/config/config.yaml \
+  https://raw.githubusercontent.com/twj0/subcheck/master/config/config.example.yaml
+vi ~/subcheck/config/config.yaml
 ```
 
-- **运行**：通过配置文件启动。监听端口由 `config.yaml` 中的 `listen-port` 控制，Web 面板位于 `http://<VPS_IP>:<端口>/admin`。
+- **运行**：监听端口由 `config.yaml` 的 `listen-port` 控制，Web 面板位于 `http://<VPS_IP>:<端口>/admin`。
 
 ```bash
 ./subcheck_linux_amd64 -f ~/subcheck/config/config.yaml
 ```
 
-> 如需长期运行，可将可执行文件移动到 `/usr/local/bin/subcheck`，并结合 `systemd`、`nohup` 或进程管理工具维护服务。
+> 建议将二进制移动到 `/usr/local/bin/subcheck` 并结合 `systemd`、`nohup` 等方式守护运行。
 
 ### 2.2 Docker 部署（可选）
 
@@ -76,7 +98,7 @@ services:
 
 ## 3. 本地开发与构建
 
-- **环境要求**：Go `1.24` 及以上、Git、GNU Make（可选）。
+- **环境要求**：Go `1.24` 及以上、Git、GNU Make（可选，仅在使用 `Makefile` 时需要）。
 - **克隆与初始化**：
 
 ```bash
@@ -91,21 +113,15 @@ cp config/config.example.yaml config/config.yaml
 go run . -f ./config/config.yaml
 ```
 
-- **构建golang二进制**：
+- **构建 Go 二进制**（Windows PowerShell 示例，可按需调整架构）：
 
-```powershell
-$env:GOOS="linux"
-$env:GOARCH="amd64"
-$env:CGO_ENABLED="0"
-go build -trimpath -ldflags "-s -w -X main.Version=dev -X main.CurrentCommit=unknown" -o subcheck_linux_amd64
+- **一键部署脚本**：如需在 Linux 主机上自动获取最新版本、同步配置与 `ipcheck/ip.sh`，可执行：
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/twj0/subcheck/master/deploy.sh | sudo bash
 ```
 
-```powershell
-$env:GOOS="linux"
-$env:GOARCH="arm64"
-$env:CGO_ENABLED="0"
-go build -trimpath -ldflags "-s -w -X main.Version=dev -X main.CurrentCommit=unknown" -o subcheck_linux_arm64
-```
+脚本会基于当前 CPU 架构下载对应二进制、生成 `/etc/subcheck/config.yaml` 与 `/opt/subcheck/ipcheck/ip.sh`，并创建 `systemd` 服务。
 
 
 
