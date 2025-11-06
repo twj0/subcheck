@@ -11,10 +11,10 @@
 ### 2.1 推荐：直接使用发布版二进制
 
 - **确认架构**：在目标 VPS 或服务器上执行 `uname -m`（可能返回 `x86_64`、`aarch64` 等），并在 [GitHub Releases](https://github.com/twj0/subcheck/releases) 页面选择匹配架构的最新版本。
-- **下载最新版本**：以 Linux AMD64 为例，将 `VERSION` 替换为最新标签，例如 `v0.0.001`。
+
 
 ```bash
-wget https://github.com/twj0/subcheck/releases/download/subcheck_linux_amd64
+wget https://github.com/twj0/subcheck/releases/download/0.0.002/subcheck_linux_amd64
 chmod +x subcheck_linux_amd64
 ```
 
