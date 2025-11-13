@@ -115,7 +115,7 @@ func (w *WebDAVUploader) doUpload(yamlData []byte, filename string) error {
 // createRequest 创建HTTP请求
 func (w *WebDAVUploader) createRequest(yamlData []byte, filename string) (*http.Request, error) {
 	baseURL := w.baseURL
-	if baseURL[len(baseURL)-1] != '/' {
+	if len(baseURL) > 0 && baseURL[len(baseURL)-1] != '/' {
 		baseURL += "/"
 	}
 

@@ -282,7 +282,10 @@ func (pc *ProxyChecker) updateProxyName(res *Result, httpClient *ProxyClient, sp
 		}
 	}
 
-	name := res.Proxy["name"].(string)
+	name, ok := res.Proxy["name"].(string)
+	if !ok {
+		name = "Unknown"
+	}
 	name = strings.TrimSpace(name)
 
 	var tags []string

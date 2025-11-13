@@ -110,14 +110,14 @@ func (app *App) triggerIPCheck() {
 			conc = 3
 		}
 		sem := make(chan struct{}, conc)
-		ticker := (&time.Ticker{})
+		var ticker *time.Ticker
 		if interval > 0 {
 			ticker = time.NewTicker(interval)
 			defer ticker.Stop()
 		}
 		var wg sync.WaitGroup
 		for idx, js := range items {
-			if interval > 0 {
+			if interval > 0 && ticker != nil {
 				if idx > 0 {
 					<-ticker.C
 				}
@@ -318,11 +318,11 @@ func (app *App) Run() {
 func (app *App) setTimer() {
 	// 停止现有定时器
 	if app.ticker != nil {
-		// 应该先发送停止信号，防止被=nil后panic
-		close(app.done)                // 发送停止信号
-		app.done = make(chan struct{}) // 创建新通道
 		app.ticker.Stop()
 		app.ticker = nil
+		// 发送停止信号并创建新通道
+		close(app.done)
+		app.done = make(chan struct{})
 	}
 
 	// 停止现有cron

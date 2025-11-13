@@ -2,6 +2,11 @@
 
 # subcheck 一键部署脚本
 # https://github.com/twj0/subcheck
+#
+# 使用方法:
+#   默认使用加速镜像: curl -fsSL https://raw.githubusercontent.com/twj0/subcheck/master/deploy.sh | sudo bash
+#   不使用加速镜像: curl -fsSL https://raw.githubusercontent.com/twj0/subcheck/master/deploy.sh | sudo GITHUB_PROXY= bash
+#   自定义镜像: curl -fsSL https://raw.githubusercontent.com/twj0/subcheck/master/deploy.sh | sudo GITHUB_PROXY=https://gh-proxy.com/ bash
 
 set -euo pipefail
 
@@ -20,6 +25,9 @@ CONFIG_NAME="config.yaml"
 BIN_NAME="subcheck"
 SERVICE_NAME="subcheck.service"
 IP_SCRIPT_PATH="${INSTALL_DIR}/ipcheck/ip.sh"
+
+# GitHub加速镜像（中国大陆用户）
+GITHUB_PROXY="${GITHUB_PROXY:-https://ghfast.top/}"
 
 # 检查root权限
 [[ $EUID -ne 0 ]] && {
@@ -106,7 +114,8 @@ fetch_latest_release() {
 download_binary() {
     mkdir -p "$INSTALL_DIR"
     echo -e "${BLUE}下载二进制文件...${NC}"
-    curl -L "$DOWNLOAD_URL" -o "${INSTALL_DIR}/${BIN_NAME}"
+    local proxied_url="${GITHUB_PROXY}${DOWNLOAD_URL}"
+    curl -L "$proxied_url" -o "${INSTALL_DIR}/${BIN_NAME}"
     chmod +x "${INSTALL_DIR}/${BIN_NAME}"
     echo -e "${GREEN}二进制文件已安装到 ${INSTALL_DIR}/${BIN_NAME}${NC}"
 }
@@ -115,7 +124,7 @@ prepare_assets() {
     mkdir -p "${INSTALL_DIR}/ipcheck"
     if [[ ! -f "$IP_SCRIPT_PATH" ]]; then
         echo -e "${BLUE}下载 ip.sh...${NC}"
-        curl -sL "https://raw.githubusercontent.com/twj0/IPQuality/main/ip.sh" -o "$IP_SCRIPT_PATH"
+        curl -sL "${GITHUB_PROXY}https://raw.githubusercontent.com/twj0/IPQuality/main/ip.sh" -o "$IP_SCRIPT_PATH"
         chmod +x "$IP_SCRIPT_PATH"
     else
         echo -e "${GREEN}检测到 existing ip.sh，跳过下载。${NC}"
@@ -124,7 +133,7 @@ prepare_assets() {
     mkdir -p "$CONFIG_DIR"
     if [[ ! -f "${CONFIG_DIR}/${CONFIG_NAME}" ]]; then
         echo -e "${BLUE}下载配置模板...${NC}"
-        curl -sL "https://raw.githubusercontent.com/${GITHUB_REPO}/master/config/config.example.yaml" -o "${CONFIG_DIR}/${CONFIG_NAME}"
+        curl -sL "${GITHUB_PROXY}https://raw.githubusercontent.com/${GITHUB_REPO}/master/config/config.example.yaml" -o "${CONFIG_DIR}/${CONFIG_NAME}"
         echo -e "${GREEN}配置文件已写入: ${CONFIG_DIR}/${CONFIG_NAME}${NC}"
     else
         echo -e "${YELLOW}检测到已有配置文件，保留现有配置。${NC}"
@@ -220,6 +229,15 @@ start_service_prompt() {
 }
 
 main() {
+    echo -e "${BLUE}=== subcheck 一键部署脚本 ===${NC}"
+    if [[ -n "$GITHUB_PROXY" ]]; then
+        echo -e "${GREEN}使用GitHub加速镜像: ${GITHUB_PROXY}${NC}"
+        echo -e "${YELLOW}如需禁用加速，请设置: GITHUB_PROXY= bash deploy.sh${NC}"
+    else
+        echo -e "${YELLOW}未使用GitHub加速镜像，下载可能较慢${NC}"
+    fi
+    echo ""
+
     install_deps
     fetch_latest_release
     download_binary
