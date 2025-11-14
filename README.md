@@ -35,6 +35,16 @@ wget -qO- https://ghfast.top/https://raw.githubusercontent.com/twj0/subcheck/mas
 
 - **脚本行为**：自动检测架构选择最新发布版二进制，并同步 `ipcheck/ip.sh` 与 `/etc/subcheck/config.yaml`，最终创建 `subcheck.service` systemd 服务。
 
+如果想删除也可以使用curl命令或者wget命令运行题目里下的del.sh脚本
+
+```bash
+wget -qO- https://raw.githubusercontent.com/twj0/subcheck/master/del.sh | sudo bash
+```
+同理
+```bash
+wget -qO- https://ghfast.top/https://raw.githubusercontent.com/twj0/subcheck/master/del.sh | sudo bash
+```
+
 ### 2.1 推荐：直接使用发布版二进制
 
 - **确认架构**：在目标 VPS 上执行 `uname -m`（可能返回 `x86_64`、`aarch64` 等），并在 [GitHub Releases](https://github.com/twj0/subcheck/releases) 页面选择匹配架构的最新版本（文件名形如 `subcheck_linux_<arch>`）。
