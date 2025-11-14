@@ -182,7 +182,7 @@ github-raw-token: ""
 github-raw-owner: ""
 github-raw-repo: ""
 github-raw-branch: "main"
-github-raw-path: ""
+github-raw-path: "sub/"
 
 # 将测速结果推送到Worker的地址
 worker-url: https://example.worker.dev
