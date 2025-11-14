@@ -72,14 +72,23 @@ update_subcheck() {
         return 1
     fi
 
-    systemctl stop ${SERVICE_NAME} 2>/dev/null || true
+    if [[ "${MODE:-}" == "systemd" ]]; then
+        systemctl stop ${SERVICE_NAME} 2>/dev/null || true
+    else
+        subcheck-service stop 2>/dev/null || true
+    fi
 
     echo -e "${BLUE}下载新版本...${NC}"
+    mkdir -p "${INSTALL_DIR}"
     curl -L "${GITHUB_PROXY}${DOWNLOAD_URL}" -o "${INSTALL_DIR}/subcheck.new"
     chmod +x "${INSTALL_DIR}/subcheck.new"
     mv "${INSTALL_DIR}/subcheck.new" "${INSTALL_DIR}/subcheck"
 
-    systemctl start ${SERVICE_NAME}
+    if [[ "${MODE:-}" == "systemd" ]]; then
+        systemctl start ${SERVICE_NAME}
+    else
+        subcheck-service start
+    fi
 
     echo -e "${GREEN}更新完成！${NC}"
 }
@@ -94,7 +103,17 @@ uninstall_subcheck() {
         return
     fi
 
-    curl -fsSL "${GITHUB_PROXY}https://raw.githubusercontent.com/${GITHUB_REPO}/master/del.sh" | bash
+    if [[ "${MODE:-}" == "systemd" ]]; then
+        curl -fsSL "${GITHUB_PROXY}https://raw.githubusercontent.com/${GITHUB_REPO}/master/del.sh" | bash
+    else
+        subcheck-service stop 2>/dev/null || true
+        XDG_DATA_HOME="${XDG_DATA_HOME:-$HOME/.local/share}"
+        XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
+        XDG_STATE_HOME="${XDG_STATE_HOME:-$HOME/.local/state}"
+        rm -rf "${XDG_DATA_HOME}/subcheck" "${XDG_CONFIG_HOME}/subcheck" "${XDG_STATE_HOME}/subcheck"
+        rm -f "$HOME/.local/bin/subcheck" "$HOME/.local/bin/subcheck-service"
+        echo -e "${GREEN}已卸载用户态 subcheck，并清理 XDG 目录与本地命令${NC}"
+    fi
 }
 
 edit_config() {
@@ -117,31 +136,63 @@ edit_config() {
     echo -e "${YELLOW}配置已修改，是否重启服务使其生效？[y/N]${NC}"
     read -r restart
     if [[ "$restart" =~ ^[Yy]$ ]]; then
-        systemctl restart ${SERVICE_NAME}
+        if [[ "${MODE:-}" == "systemd" ]]; then
+            systemctl restart ${SERVICE_NAME}
+        else
+            subcheck-service restart
+        fi
         echo -e "${GREEN}服务已重启${NC}"
     fi
 }
 
 show_status() {
-    systemctl status ${SERVICE_NAME} --no-pager
+    if [[ "${MODE:-}" == "systemd" ]]; then
+        systemctl status ${SERVICE_NAME} --no-pager
+    else
+        subcheck-service status || true
+    fi
 }
 
 restart_service() {
     echo -e "${BLUE}重启服务...${NC}"
-    systemctl restart ${SERVICE_NAME}
+    if [[ "${MODE:-}" == "systemd" ]]; then
+        systemctl restart ${SERVICE_NAME}
+    else
+        subcheck-service restart
+    fi
     echo -e "${GREEN}服务已重启${NC}"
 }
 
 show_logs() {
     echo -e "${BLUE}显示最近日志 (按 Ctrl+C 退出)${NC}"
-    journalctl -u ${SERVICE_NAME} -f --no-pager
+    if [[ "${MODE:-}" == "systemd" ]]; then
+        journalctl -u ${SERVICE_NAME} -f --no-pager
+    else
+        subcheck-service logs
+    fi
 }
 
 main() {
-    if [[ $EUID -ne 0 ]]; then
-        echo -e "${RED}请使用 root 权限运行${NC}"
-        exit 1
+    MODE="${SUBCHECK_MODE:-}"
+    if [[ -z "$MODE" ]]; then
+        pid1="$(cat /proc/1/comm 2>/dev/null || ps -p 1 -o comm= 2>/dev/null || echo "")"
+        if command -v systemctl &>/dev/null && [[ "${pid1,,}" == systemd* ]]; then
+            MODE="systemd"
+        else
+            MODE="user"
+        fi
     fi
+
+    if [[ "$MODE" == "systemd" ]]; then
+        INSTALL_DIR="/opt/subcheck"
+        CONFIG_DIR="/etc/subcheck"
+    else
+        XDG_DATA_HOME="${XDG_DATA_HOME:-$HOME/.local/share}"
+        XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
+        INSTALL_DIR="${XDG_DATA_HOME}/subcheck"
+        CONFIG_DIR="${XDG_CONFIG_HOME}/subcheck"
+    fi
+    CONFIG_FILE="${CONFIG_DIR}/config.yaml"
 
     while true; do
         show_menu

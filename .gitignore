@@ -25,3 +25,4 @@ claude.md
 doc/
 subcheck_linux_arm64
 subcheck_linux_amd64
+proot-distro-error.md

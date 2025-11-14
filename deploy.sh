@@ -29,11 +29,7 @@ IP_SCRIPT_PATH="${INSTALL_DIR}/ipcheck/ip.sh"
 # GitHub加速镜像（中国大陆用户）
 GITHUB_PROXY="${GITHUB_PROXY:-https://ghfast.top/}"
 
-# 检查root权限
-[[ $EUID -ne 0 ]] && {
-    echo -e "${RED}错误：请使用root用户运行此脚本！${NC}"
-    exit 1
-}
+MODE=""
 
 ensure_dep() {
     local dep=$1
@@ -165,8 +161,17 @@ EOF
 
 install_global_command() {
     echo -e "${BLUE}安装全局命令...${NC}"
-    curl -sL "${GITHUB_PROXY}https://raw.githubusercontent.com/${GITHUB_REPO}/master/subcheck-cli.sh" -o /usr/local/bin/subcheck
-    chmod +x /usr/local/bin/subcheck
+    if [[ "${MODE}" == "systemd" ]]; then
+        local dest="/usr/local/bin/subcheck"
+        curl -sL "${GITHUB_PROXY}https://raw.githubusercontent.com/${GITHUB_REPO}/master/subcheck-cli.sh" -o "$dest"
+        chmod +x "$dest"
+    else
+        local dest="$HOME/.local/bin/subcheck"
+        mkdir -p "$HOME/.local/bin"
+        curl -sL "${GITHUB_PROXY}https://raw.githubusercontent.com/${GITHUB_REPO}/master/subcheck-cli.sh" -o "$dest"
+        chmod +x "$dest"
+        echo -e "${YELLOW}如命令未生效，请将以下路径加入PATH: ${GREEN}export PATH=\"$HOME/.local/bin:$PATH\"${NC}"
+    fi
     echo -e "${GREEN}全局命令已安装，可使用 'subcheck' 命令打开管理面板${NC}"
 }
 
@@ -233,8 +238,14 @@ start_service_prompt() {
     echo -e "\n${YELLOW}快速管理:${NC}"
     echo -e "  管理面板: ${GREEN}subcheck${NC}"
     echo -e "\n${YELLOW}服务管理命令:${NC}"
-    echo -e "  启动: ${GREEN}systemctl start ${SERVICE_NAME}${NC}"
-    echo -e "  状态: ${GREEN}systemctl status ${SERVICE_NAME}${NC}"
+    if [[ "${MODE}" == "systemd" ]]; then
+        echo -e "  启动: ${GREEN}systemctl start ${SERVICE_NAME}${NC}"
+        echo -e "  状态: ${GREEN}systemctl status ${SERVICE_NAME}${NC}"
+    else
+        echo -e "  启动: ${GREEN}subcheck-service start${NC}"
+        echo -e "  状态: ${GREEN}subcheck-service status${NC}"
+        echo -e "  日志: ${GREEN}subcheck-service logs${NC}"
+    fi
     echo -e "\n${YELLOW}Web控制面板:${NC}"
     echo -e "  地址: ${GREEN}http://YOUR_IP:8199/admin${NC}"
     echo -e "  密钥: ${GREEN}123456${NC} (请在配置文件中修改)"
@@ -250,12 +261,47 @@ main() {
     fi
     echo ""
 
+    MODE="${SUBCHECK_MODE:-}"
+    if [[ -z "$MODE" ]]; then
+        pid1="$(cat /proc/1/comm 2>/dev/null || ps -p 1 -o comm= 2>/dev/null || echo "")"
+        if command -v systemctl &>/dev/null && [[ "${pid1,,}" == systemd* ]]; then
+            MODE="systemd"
+        else
+            MODE="user"
+        fi
+    fi
+
+    if [[ "$MODE" == "systemd" ]]; then
+        if [[ $EUID -ne 0 ]]; then
+            echo -e "${RED}错误：请使用root用户运行此脚本！${NC}"
+            exit 1
+        fi
+    else
+        XDG_DATA_HOME="${XDG_DATA_HOME:-$HOME/.local/share}"
+        XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
+        XDG_STATE_HOME="${XDG_STATE_HOME:-$HOME/.local/state}"
+        INSTALL_DIR="${XDG_DATA_HOME}/subcheck"
+        CONFIG_DIR="${XDG_CONFIG_HOME}/subcheck"
+        IP_SCRIPT_PATH="${INSTALL_DIR}/ipcheck/ip.sh"
+        mkdir -p "$INSTALL_DIR" "$CONFIG_DIR" "${XDG_STATE_HOME}/subcheck/logs"
+    fi
+
     install_deps
     fetch_latest_release
     download_binary
     prepare_assets
     configure_sub_urls
-    create_systemd_service
+
+    if [[ "$MODE" == "systemd" ]]; then
+        create_systemd_service
+    else
+        svc_path="${INSTALL_DIR}/subcheck-service"
+        curl -sL "${GITHUB_PROXY}https://raw.githubusercontent.com/${GITHUB_REPO}/master/subcheck-service" -o "$svc_path"
+        chmod +x "$svc_path"
+        mkdir -p "$HOME/.local/bin"
+        cp -f "$svc_path" "$HOME/.local/bin/subcheck-service" 2>/dev/null || true
+    fi
+
     install_global_command
     start_service_prompt
 }
