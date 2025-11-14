@@ -167,7 +167,19 @@ show_status() {
     if [[ "${MODE:-}" == "systemd" ]]; then
         systemctl status ${SERVICE_NAME} --no-pager
     else
-        "${INSTALL_DIR}/subcheck-service" status 2>/dev/null || "$HOME/.local/bin/subcheck-service" status 2>/dev/null || echo -e "${RED}subcheck-service 未找到${NC}"
+        local svc_cmd=""
+        if [[ -x "${INSTALL_DIR}/subcheck-service" ]]; then
+            svc_cmd="${INSTALL_DIR}/subcheck-service"
+        elif [[ -x "$HOME/.local/bin/subcheck-service" ]]; then
+            svc_cmd="$HOME/.local/bin/subcheck-service"
+        fi
+
+        if [[ -n "$svc_cmd" ]]; then
+            "${svc_cmd}" status
+        else
+            echo -e "${RED}subcheck-service 未找到，请重新运行安装脚本${NC}"
+            echo -e "${YELLOW}安装命令: curl -fsSL https://raw.githubusercontent.com/${GITHUB_REPO}/master/deploy.sh | bash${NC}"
+        fi
     fi
 }
 

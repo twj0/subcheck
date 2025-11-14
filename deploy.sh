@@ -295,11 +295,14 @@ main() {
     if [[ "$MODE" == "systemd" ]]; then
         create_systemd_service
     else
+        echo -e "${BLUE}安装用户态服务管理脚本...${NC}"
         svc_path="${INSTALL_DIR}/subcheck-service"
         curl -sL "${GITHUB_PROXY}https://raw.githubusercontent.com/${GITHUB_REPO}/master/subcheck-service" -o "$svc_path"
         chmod +x "$svc_path"
         mkdir -p "$HOME/.local/bin"
-        cp -f "$svc_path" "$HOME/.local/bin/subcheck-service" 2>/dev/null || true
+        cp -f "$svc_path" "$HOME/.local/bin/subcheck-service"
+        chmod +x "$HOME/.local/bin/subcheck-service"
+        echo -e "${GREEN}服务管理脚本已安装到: ${svc_path} 和 $HOME/.local/bin/subcheck-service${NC}"
     fi
 
     install_global_command
