@@ -75,7 +75,10 @@ update_subcheck() {
     if [[ "${MODE:-}" == "systemd" ]]; then
         systemctl stop ${SERVICE_NAME} 2>/dev/null || true
     else
-        subcheck-service stop 2>/dev/null || true
+        local svc_cmd=""
+        [[ -x "${INSTALL_DIR}/subcheck-service" ]] && svc_cmd="${INSTALL_DIR}/subcheck-service"
+        [[ -z "$svc_cmd" && -x "$HOME/.local/bin/subcheck-service" ]] && svc_cmd="$HOME/.local/bin/subcheck-service"
+        [[ -n "$svc_cmd" ]] && "${svc_cmd}" stop 2>/dev/null || true
     fi
 
     echo -e "${BLUE}下载新版本...${NC}"
@@ -87,7 +90,10 @@ update_subcheck() {
     if [[ "${MODE:-}" == "systemd" ]]; then
         systemctl start ${SERVICE_NAME}
     else
-        subcheck-service start
+        local svc_cmd=""
+        [[ -x "${INSTALL_DIR}/subcheck-service" ]] && svc_cmd="${INSTALL_DIR}/subcheck-service"
+        [[ -z "$svc_cmd" && -x "$HOME/.local/bin/subcheck-service" ]] && svc_cmd="$HOME/.local/bin/subcheck-service"
+        [[ -n "$svc_cmd" ]] && "${svc_cmd}" start || echo -e "${YELLOW}请手动启动服务${NC}"
     fi
 
     echo -e "${GREEN}更新完成！${NC}"
@@ -106,7 +112,11 @@ uninstall_subcheck() {
     if [[ "${MODE:-}" == "systemd" ]]; then
         curl -fsSL "${GITHUB_PROXY}https://raw.githubusercontent.com/${GITHUB_REPO}/master/del.sh" | bash
     else
-        subcheck-service stop 2>/dev/null || true
+        local svc_cmd=""
+        [[ -x "${INSTALL_DIR}/subcheck-service" ]] && svc_cmd="${INSTALL_DIR}/subcheck-service"
+        [[ -z "$svc_cmd" && -x "$HOME/.local/bin/subcheck-service" ]] && svc_cmd="$HOME/.local/bin/subcheck-service"
+        [[ -n "$svc_cmd" ]] && "${svc_cmd}" stop 2>/dev/null || true
+
         XDG_DATA_HOME="${XDG_DATA_HOME:-$HOME/.local/share}"
         XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
         XDG_STATE_HOME="${XDG_STATE_HOME:-$HOME/.local/state}"
@@ -139,7 +149,15 @@ edit_config() {
         if [[ "${MODE:-}" == "systemd" ]]; then
             systemctl restart ${SERVICE_NAME}
         else
-            subcheck-service restart
+            local svc_cmd=""
+            [[ -x "${INSTALL_DIR}/subcheck-service" ]] && svc_cmd="${INSTALL_DIR}/subcheck-service"
+            [[ -z "$svc_cmd" && -x "$HOME/.local/bin/subcheck-service" ]] && svc_cmd="$HOME/.local/bin/subcheck-service"
+            if [[ -n "$svc_cmd" ]]; then
+                "${svc_cmd}" restart
+            else
+                echo -e "${RED}subcheck-service 未找到${NC}"
+                return 1
+            fi
         fi
         echo -e "${GREEN}服务已重启${NC}"
     fi
@@ -149,7 +167,7 @@ show_status() {
     if [[ "${MODE:-}" == "systemd" ]]; then
         systemctl status ${SERVICE_NAME} --no-pager
     else
-        subcheck-service status || true
+        "${INSTALL_DIR}/subcheck-service" status 2>/dev/null || "$HOME/.local/bin/subcheck-service" status 2>/dev/null || echo -e "${RED}subcheck-service 未找到${NC}"
     fi
 }
 
@@ -163,10 +181,20 @@ restart_service() {
             return 1
         fi
     else
-        if subcheck-service restart; then
+        local svc_cmd=""
+        if [[ -x "${INSTALL_DIR}/subcheck-service" ]]; then
+            svc_cmd="${INSTALL_DIR}/subcheck-service"
+        elif [[ -x "$HOME/.local/bin/subcheck-service" ]]; then
+            svc_cmd="$HOME/.local/bin/subcheck-service"
+        else
+            echo -e "${RED}subcheck-service 未找到，请重新安装${NC}"
+            return 1
+        fi
+
+        if "${svc_cmd}" restart; then
             echo -e "${GREEN}服务已重启${NC}"
         else
-            echo -e "${RED}服务重启失败（请先执行: subcheck-service start；或运行 subcheck-service logs 查看错误）${NC}"
+            echo -e "${RED}服务重启失败（请先执行: ${svc_cmd} start；或运行 ${svc_cmd} logs 查看错误）${NC}"
             return 1
         fi
     fi
@@ -177,7 +205,16 @@ show_logs() {
     if [[ "${MODE:-}" == "systemd" ]]; then
         journalctl -u ${SERVICE_NAME} -f --no-pager
     else
-        subcheck-service logs
+        local svc_cmd=""
+        if [[ -x "${INSTALL_DIR}/subcheck-service" ]]; then
+            svc_cmd="${INSTALL_DIR}/subcheck-service"
+        elif [[ -x "$HOME/.local/bin/subcheck-service" ]]; then
+            svc_cmd="$HOME/.local/bin/subcheck-service"
+        else
+            echo -e "${RED}subcheck-service 未找到${NC}"
+            return 1
+        fi
+        "${svc_cmd}" logs
     fi
 }
 
