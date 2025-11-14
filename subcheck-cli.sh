@@ -156,11 +156,20 @@ show_status() {
 restart_service() {
     echo -e "${BLUE}重启服务...${NC}"
     if [[ "${MODE:-}" == "systemd" ]]; then
-        systemctl restart ${SERVICE_NAME}
+        if systemctl restart ${SERVICE_NAME}; then
+            echo -e "${GREEN}服务已重启${NC}"
+        else
+            echo -e "${RED}服务重启失败${NC}"
+            return 1
+        fi
     else
-        subcheck-service restart
+        if subcheck-service restart; then
+            echo -e "${GREEN}服务已重启${NC}"
+        else
+            echo -e "${RED}服务重启失败（请先执行: subcheck-service start；或运行 subcheck-service logs 查看错误）${NC}"
+            return 1
+        fi
     fi
-    echo -e "${GREEN}服务已重启${NC}"
 }
 
 show_logs() {

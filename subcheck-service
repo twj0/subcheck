@@ -27,6 +27,34 @@ ensure_dirs() {
   mkdir -p "$PREFIX_DIR" "$LOG_DIR"
 }
 
+# Try to resolve legacy install paths when XDG paths are missing
+resolve_paths() {
+  local changed=0
+  if [[ ! -x "$BIN" ]]; then
+    if [[ -x "/opt/subcheck/subcheck" ]]; then
+      BIN="/opt/subcheck/subcheck"
+      changed=1
+      echo -e "${YELLOW}Using legacy binary path: ${BIN}${NC}"
+    fi
+  fi
+  if [[ ! -f "$CONFIG_FILE" ]]; then
+    if [[ -f "/etc/subcheck/config.yaml" ]]; then
+      CONFIG_FILE="/etc/subcheck/config.yaml"
+      changed=1
+      echo -e "${YELLOW}Using legacy config path: ${CONFIG_FILE}${NC}"
+    else
+      local bindir
+      bindir="$(dirname "$BIN" 2>/dev/null || true)"
+      if [[ -n "$bindir" && -f "$bindir/config/config.yaml" ]]; then
+        CONFIG_FILE="$bindir/config/config.yaml"
+        changed=1
+        echo -e "${YELLOW}Using binary-local config path: ${CONFIG_FILE}${NC}"
+      fi
+    fi
+  fi
+  return 0
+}
+
 is_running() {
   # returns 0 if running, 1 otherwise
   if [[ -f "$PID_FILE" ]]; then
@@ -41,6 +69,7 @@ is_running() {
 
 start_service() {
   ensure_dirs
+  resolve_paths
   if [[ ! -x "$BIN" ]]; then
     echo -e "${RED}Binary not found or not executable: ${BIN}${NC}"
     echo -e "${YELLOW}Please run the installer first or check your installation path.${NC}"
