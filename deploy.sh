@@ -163,6 +163,13 @@ EOF
     echo -e "${GREEN}systemd 服务已创建并设置为开机自启。${NC}"
 }
 
+install_global_command() {
+    echo -e "${BLUE}安装全局命令...${NC}"
+    curl -sL "${GITHUB_PROXY}https://raw.githubusercontent.com/${GITHUB_REPO}/master/subcheck-cli.sh" -o /usr/local/bin/subcheck
+    chmod +x /usr/local/bin/subcheck
+    echo -e "${GREEN}全局命令已安装，可使用 'subcheck' 命令打开管理面板${NC}"
+}
+
 configure_sub_urls() {
     echo -e "${GREEN}请输入您的订阅链接 (多个链接用空格分隔，直接回车跳过):${NC}"
     read -r SUB_URLS || true
@@ -223,9 +230,14 @@ configure_sub_urls() {
 
 start_service_prompt() {
     echo -e "\n${GREEN}🎉 subcheck 安装完成！ 🎉${NC}"
+    echo -e "\n${YELLOW}快速管理:${NC}"
+    echo -e "  管理面板: ${GREEN}subcheck${NC}"
     echo -e "\n${YELLOW}服务管理命令:${NC}"
     echo -e "  启动: ${GREEN}systemctl start ${SERVICE_NAME}${NC}"
     echo -e "  状态: ${GREEN}systemctl status ${SERVICE_NAME}${NC}"
+    echo -e "\n${YELLOW}Web控制面板:${NC}"
+    echo -e "  地址: ${GREEN}http://YOUR_IP:8199/admin${NC}"
+    echo -e "  密钥: ${GREEN}123456${NC} (请在配置文件中修改)"
 }
 
 main() {
@@ -244,6 +256,7 @@ main() {
     prepare_assets
     configure_sub_urls
     create_systemd_service
+    install_global_command
     start_service_prompt
 }
 
