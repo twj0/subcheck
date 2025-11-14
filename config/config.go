@@ -15,13 +15,20 @@ type Config struct {
 	MinSpeed             int           `yaml:"min-speed"`
 	Timeout              int           `yaml:"timeout"`
 	FilterRegex          string        `yaml:"filter-regex"`
-	SaveMethod           string        `yaml:"save-method"`
+	SaveMethod           any           `yaml:"save-method"`
 	WebDAVURL            string        `yaml:"webdav-url"`
 	WebDAVUsername       string        `yaml:"webdav-username"`
 	WebDAVPassword       string        `yaml:"webdav-password"`
 	GithubToken          string        `yaml:"github-token"`
 	GithubGistID         string        `yaml:"github-gist-id"`
 	GithubAPIMirror      string        `yaml:"github-api-mirror"`
+	GithubRawToken       string        `yaml:"github-raw-token"`
+	GithubRawOwner       string        `yaml:"github-raw-owner"`
+	GithubRawRepo        string        `yaml:"github-raw-repo"`
+	GithubRawBranch      string        `yaml:"github-raw-branch"`
+	GithubRawPath        string        `yaml:"github-raw-path"`
+	TelegraphToken       string        `yaml:"telegraph-token"`
+	TelegraphPath        string        `yaml:"telegraph-path"`
 	WorkerURL            string        `yaml:"worker-url"`
 	WorkerToken          string        `yaml:"worker-token"`
 	S3Endpoint           string        `yaml:"s3-endpoint"`

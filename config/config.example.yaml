@@ -147,7 +147,11 @@ sub-store-push-service: ""
 mihomo-overwrite-url: "http://127.0.0.1:8199/sub/ACL4SSR_Online_Full.yaml"
 
 # 保存方法
-# 目前支持的保存方法: r2, local, gist, webdav, s3
+# 目前支持的保存方法: r2, local, gist, webdav, s3, telegraph, github-raw
+# 支持单个方法或多个方法（数组格式）
+# 单个方法示例: save-method: local
+# 多个方法示例: save-method: [local, telegraph, github-raw]
+# 注意：无论如何配置，都会自动包含 local 方法作为备份
 save-method: local
 
 # webdav
@@ -161,6 +165,24 @@ github-gist-id: ""
 github-token: ""
 # github api mirror
 github-api-mirror: ""
+
+# Telegraph (Telegra.ph) - 匿名发布平台，无需登录
+# telegraph-token: 可选，如果要编辑已有页面需要提供 access_token
+# telegraph-path: 可选，如果要编辑已有页面需要提供页面路径
+telegraph-token: ""
+telegraph-path: ""
+
+# GitHub Raw - 直接推送到 GitHub 仓库
+# github-raw-token: GitHub Personal Access Token (需要 repo 权限)
+# github-raw-owner: 仓库所有者用户名
+# github-raw-repo: 仓库名称
+# github-raw-branch: 分支名称，默认为 main
+# github-raw-path: 文件保存路径（可选，如 "sub/" 会保存到 sub 目录下）
+github-raw-token: ""
+github-raw-owner: ""
+github-raw-repo: ""
+github-raw-branch: "main"
+github-raw-path: ""
 
 # 将测速结果推送到Worker的地址
 worker-url: https://example.worker.dev

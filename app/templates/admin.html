@@ -280,21 +280,44 @@
             </div>
         </div>
         
+        <!-- 导航菜单 -->
+        <div class="card mb-3">
+            <div class="card-body py-2">
+                <div class="d-flex flex-wrap gap-2">
+                    <a href="/admin/dashboard" class="btn btn-outline-primary btn-sm">
+                        <i class="bi bi-speedometer2 me-1"></i>仪表盘
+                    </a>
+                    <a href="/admin/results/speed" class="btn btn-outline-success btn-sm">
+                        <i class="bi bi-lightning-fill me-1"></i>速度测试
+                    </a>
+                    <a href="/admin/results/ip" class="btn btn-outline-warning btn-sm">
+                        <i class="bi bi-shield-check me-1"></i>IP纯净度
+                    </a>
+                    <a href="/admin/subscriptions" class="btn btn-outline-info btn-sm">
+                        <i class="bi bi-link-45deg me-1"></i>订阅管理
+                    </a>
+                </div>
+            </div>
+        </div>
+
         <!-- 状态栏 -->
         <div class="status-bar">
             <div class="row">
                 <div class="col-md-5 col-sm-12 status-item">
-                    <strong>配置文件:</strong> 
+                    <strong>配置文件:</strong>
                     <span class="config-path" title="{{.configPath}}">{{.configPath}}</span>
                 </div>
                 <div class="col-md-3 col-sm-6 status-item">
-                    <strong>当前状态:</strong> 
+                    <strong>当前状态:</strong>
                     <span id="statusContainer">
                         <span id="statusIcon" class="bi me-1"></span>
                         <span id="nextCheckTime">加载中...</span>
                     </span>
                 </div>
                 <div class="col-md-4 col-sm-6 status-item text-md-end">
+                    <button id="triggerIPCheck" class="btn btn-warning btn-sm me-2">
+                        <i class="bi bi-shield-check me-1"></i>IP检测
+                    </button>
                     <button id="forceClose" class="btn btn-danger btn-sm me-2">
                         <i class="bi bi-power me-1"></i>强制关闭
                     </button>
@@ -638,16 +661,55 @@
             });
         });
         
+        // IP质量检测
+        document.getElementById('triggerIPCheck').addEventListener('click', function() {
+            const button = this;
+            const icon = button.querySelector('i');
+            const originalIcon = icon.className;
+
+            // 替换图标并添加旋转动画
+            icon.className = 'bi bi-arrow-repeat me-1 rotate-animation';
+            button.disabled = true;
+
+            fetch('/api/test/ip-quality', {
+                method: 'POST',
+                headers: addApiKeyHeader()
+            })
+            .then(response => {
+                if (handleUnauthorized(response, true)) {
+                    throw new Error('未授权');
+                }
+                return response.json();
+            })
+            .then(data => {
+                alert('IP质量检测已启动，请查看日志');
+                loadLogs();
+            })
+            .catch(error => {
+                if (error.message !== '未授权') {
+                    console.error('触发IP检测失败:', error);
+                    alert('触发IP检测失败: ' + error.message);
+                }
+            })
+            .finally(() => {
+                // 还原按钮
+                setTimeout(() => {
+                    icon.className = originalIcon;
+                    button.disabled = false;
+                }, 500);
+            });
+        });
+
         // 立即检测
         document.getElementById('triggerCheck').addEventListener('click', function() {
             const button = this;
             const icon = button.querySelector('i');
             const originalIcon = icon.className;
-            
+
             // 替换图标并添加旋转动画
             icon.className = 'bi bi-arrow-repeat me-1 rotate-animation';
             button.disabled = true;
-            
+
             fetch('/api/trigger-check', {
                 method: 'POST',
                 headers: addApiKeyHeader()

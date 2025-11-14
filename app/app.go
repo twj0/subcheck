@@ -428,7 +428,7 @@ func (app *App) checkProxies() error {
 		}
 	}
 
-	// 入库速度测试结果（简版，无订阅ID关联）
+	// 入库速度测试结果和IP纯净度结果（简版，无订阅ID关联）
 	for _, r := range results {
 		var ip sql.NullString
 		if r.IP != "" {
@@ -439,6 +439,14 @@ func (app *App) checkProxies() error {
 			pjs = sql.NullString{String: string(b), Valid: true}
 		}
 		_ = storage.SaveSpeedResult(context.Background(), sql.NullInt64{}, fmt.Sprint(r.Proxy["name"]), sql.NullInt64{}, float64(r.SpeedKBps), sql.NullFloat64{}, ip, pjs)
+
+		// 保存IP纯净度结果（如果有）
+		if r.IPRisk != "" && r.IP != "" {
+			// 解析IPRisk字符串，格式可能是 "Low" 或包含更多信息
+			riskLevel := sql.NullString{String: r.IPRisk, Valid: true}
+			// 这里可以根据实际情况解析更详细的信息
+			_ = storage.SaveIPQualityResult(context.Background(), sql.NullInt64{}, r.IP, sql.NullInt64{}, riskLevel, sql.NullBool{}, sql.NullBool{}, sql.NullBool{}, sql.NullString{String: r.Country, Valid: r.Country != ""})
+		}
 	}
 
 	slog.Info("检测完成")

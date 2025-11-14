@@ -302,3 +302,9 @@ func QueryTopNSpeedIPs(ctx context.Context, n int) ([]string, error) {
 	}
 	return out, nil
 }
+
+func SaveIPQualityResult(ctx context.Context, subscriptionID sql.NullInt64, ipAddr string, fraudScore sql.NullInt64, riskLevel sql.NullString, isProxy, isVPN, isTor sql.NullBool, countryCode sql.NullString) error {
+	_, err := DB.ExecContext(ctx, `INSERT INTO ip_quality_results (subscription_id, ip_address, fraud_score, risk_level, is_proxy, is_vpn, is_tor, country_code) VALUES (?,?,?,?,?,?,?,?)`,
+		subscriptionID, ipAddr, fraudScore, riskLevel, isProxy, isVPN, isTor, countryCode)
+	return err
+}
