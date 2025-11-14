@@ -88,6 +88,7 @@ var GlobalConfig = &Config{
 	DownloadMB:         20,
 	AliveTestUrl:       "http://gstatic.com/generate_204",
 	SubUrlsGetUA:       "clash.meta (https://github.com/twj0/subcheck)",
+	APIKey:             "123456",
 	IpCheck: IpCheckConfig{
 		Enabled:     true,
 		ScriptPath:  "ipcheck/ip.sh",

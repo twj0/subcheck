@@ -1,4 +1,5 @@
-# subcheck
+# subcheck 
+基于[subs-check](https://github.com/beck-8/subs-check)开发，
 
 `subcheck` 是一个基于 Go 语言开发的代理订阅链接检查与管理工具。它通过自动化的方式，帮助用户测试、筛选和组织来自不同订阅源的代理节点。
 
@@ -56,6 +57,7 @@ vi ~/subcheck/config/config.yaml
 
 > 建议将二进制移动到 `/usr/local/bin/subcheck` 并结合 `systemd`、`nohup` 等方式守护运行。
 
+
 ### 2.2 Docker 部署（可选）
 
 - **构建镜像**：
@@ -95,6 +97,43 @@ services:
 ```
 
 执行 `docker compose up -d --build` 即可完成部署。
+
+### 2.3 Web 管理面板
+
+部署完成后，可通过浏览器访问 Web 管理面板进行可视化管理。
+
+- **访问地址**：`http://<服务器IP>:<端口>/admin`（默认端口 `8199`）
+- **功能特性**：
+  - 在线编辑配置文件
+  - 手动触发节点检测
+  - 查看实时检测进度和状态
+  - 查看日志输出
+  - 查询速度测试结果和 IP 质量检测结果
+  - 管理订阅链接（增删改查）
+  - 数据统计仪表板
+
+#### API 密钥说明
+
+- **页面访问**：直接访问 `/admin` 等页面**无需** API 密钥
+- **API 调用**：所有 `/api/*` 接口需要在 HTTP 请求头中携带 API 密钥：
+  ```
+  X-API-Key: your-api-key
+  ```
+
+- **密钥配置**：
+  - 如果未在配置文件中设置 `api-key`，系统会自动生成一个 6 位数字密钥
+  - 生成的密钥会在启动日志中显示：`未设置api-key，已生成一个随机api-key api-key=123456`
+  - 建议在 `config.yaml` 中设置固定密钥：
+    ```yaml
+    enable-web-ui: true
+    api-key: "your-secret-key-here"
+    ```
+
+- **订阅输出链接**（无需密钥）：
+  - Clash 格式：`http://<IP>:<端口>/sub/all.yaml`
+  - Base64 格式：`http://<IP>:<端口>/sub/base64.txt`
+  - Mihomo 配置：`http://<IP>:<端口>/sub/mihomo.yaml`
+
 
 ## 3. 本地开发与构建
 

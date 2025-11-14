@@ -49,8 +49,7 @@ func (app *App) initHttpServer() error {
 			if apiKey := os.Getenv("API_KEY"); apiKey != "" {
 				config.GlobalConfig.APIKey = apiKey
 			} else {
-				config.GlobalConfig.APIKey = GenerateSimpleKey()
-				slog.Warn("未设置api-key，已生成一个随机api-key", "api-key", config.GlobalConfig.APIKey)
+				config.GlobalConfig.APIKey = "123456"
 			}
 		}
 		slog.Info("启用Web控制面板", "path", "http://ip:port/admin", "api-key", config.GlobalConfig.APIKey)
