@@ -177,19 +177,159 @@ services:
 
 ---
 
-## 3. Web 管理面板
+## 3. 配置文件说明
+
+### 3.1 订阅链接配置
+
+配置文件位于 `/etc/subcheck/config.yaml`（systemd）或 `~/.config/subcheck/config.yaml`（用户模式）。
+
+#### 订阅链接填写规则
+
+```yaml
+sub-urls:
+  - https://example.com/sub1.txt
+  - "https://example.com/sub2.txt"
+  - https://raw.githubusercontent.com/user/repo/main/config.yaml
+```
+
+**引号说明**：
+- **不加引号**：适用于简单 URL，YAML 会自动识别
+- **加引号**：当 URL 包含特殊字符（如 `#`、`:`、`@`）时必须加引号
+
+#### GitHub 订阅加速（中国大陆用户）
+
+如果订阅链接来自 GitHub，可能被墙，建议使用加速代理：
+
+**方法 1：使用 `github-proxy` 配置**
+```yaml
+github-proxy: "https://ghfast.top/"
+# 或
+github-proxy: "https://gh-proxy.com/"
+
+sub-urls:
+  - https://raw.githubusercontent.com/user/repo/main/nodes.yaml
+```
+
+**方法 2：直接在订阅链接中添加代理前缀**
+```yaml
+sub-urls:
+  - https://ghfast.top/https://raw.githubusercontent.com/user/repo/main/nodes.yaml
+  - https://gh-proxy.com/https://raw.githubusercontent.com/user/repo/main/config.yaml
+```
+
+**常用 GitHub 加速镜像**：
+- `https://ghfast.top/`
+- `https://gh-proxy.com/`
+- `https://mirror.ghproxy.com/`
+
+#### 订阅链接高级用法
+
+**添加备注标签**：
+```yaml
+sub-urls:
+  - https://example.com/sub.txt#我的订阅
+  - https://example.com/sub2.txt#备用订阅
+```
+备注会自动添加到节点名称末尾，方便区分来源。
+
+**指定订阅类型**：
+```yaml
+sub-urls:
+  - https://example.com/sub.txt?flag=clash.meta
+```
+
+**使用时间占位符**（动态订阅）：
+```yaml
+sub-urls:
+  - https://example.com/daily-{Y}-{m}-{d}.yaml
+  - https://example.com/config/{Ymd}.yaml
+```
+
+**远程订阅清单**：
+```yaml
+sub-urls-remote:
+  - https://example.com/sub-list.txt
+  - https://raw.githubusercontent.com/user/repo/main/subscriptions.yaml
+```
+
+### 3.2 保存方式配置
+
+支持多种保存方式，可同时保存到多个位置：
+
+```yaml
+# 单个保存方式
+save-method: local
+
+# 多个保存方式（推荐）
+save-method: [local, telegraph, github-raw]
+```
+
+**支持的保存方式**：
+- `local` - 本地文件系统（始终包含）
+- `telegraph` - Telegraph 匿名发布（无需配置）
+- `github-raw` - GitHub 仓库（需要配置 token）
+- `gist` - GitHub Gist
+- `webdav` - WebDAV 服务器
+- `s3` - S3 兼容存储
+- `r2` - Cloudflare R2
+
+**Telegraph 配置**（可选）：
+```yaml
+telegraph-token: ""  # 留空则每次创建新页面
+telegraph-path: ""   # 留空则每次创建新页面
+```
+
+**GitHub Raw 配置**：
+```yaml
+github-raw-token: "ghp_xxxxxxxxxxxx"
+github-raw-owner: "your-username"
+github-raw-repo: "proxy-nodes"
+github-raw-branch: "main"
+github-raw-path: "sub/"
+```
+
+### 3.3 其他重要配置
+
+```yaml
+# 检测间隔（分钟）
+check-interval: 120
+
+# 或使用 cron 表达式
+cron-expression: "0 */2 * * *"  # 每2小时
+
+# 并发数
+concurrent: 20
+
+# 最低速度（KB/s）
+min-speed: 512
+
+# 超时时间（毫秒）
+timeout: 5000
+
+# 监听端口
+listen-port: ":8199"
+
+# Web 管理面板
+enable-web-ui: true
+api-key: "123456"  # 建议修改
+```
+
+---
+
+## 4. Web 管理面板
 
 部署完成后，可通过浏览器访问 Web 管理面板进行可视化管理。
 
 - **访问地址**：`http://<服务器IP>:<端口>/admin`（默认端口 `8199`）
 - **功能特性**：
-  - 在线编辑配置文件
-  - 手动触发节点检测
-  - 查看实时检测进度和状态
-  - 查看日志输出
-  - 查询速度测试结果和 IP 质量检测结果
-  - 管理订阅链接（增删改查）
-  - 数据统计仪表板
+  - 📊 仪表盘 - 数据统计概览
+  - ⚡ 速度测试 - 查看节点速度测试结果
+  - 🛡️ IP纯净度 - 查看 IP 质量检测结果
+  - 🔗 订阅管理 - 管理订阅链接（增删改查）
+  - 📝 在线编辑配置文件
+  - 🚀 手动触发节点检测
+  - 📈 查看实时检测进度和状态
+  - 📋 查看日志输出
 
 #### API 密钥说明
 
@@ -216,7 +356,7 @@ services:
 ---
 
 
-## 4. 本地开发与构建
+## 5. 本地开发与构建
 
 - **环境要求**：Go `1.24` 及以上、Git、GNU Make（可选，仅在使用 `Makefile` 时需要）。
 - **克隆与初始化**：
