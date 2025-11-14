@@ -26,13 +26,7 @@ CLI_PATH="/usr/local/bin/subcheck"
 
 echo -e "${BLUE}=== subcheck 卸载脚本 ===${NC}"
 echo -e "${RED}警告：此操作将完全删除 subcheck 及其所有配置文件！${NC}"
-echo -ne "${YELLOW}确认卸载？输入 yes 继续: ${NC}"
-read -r confirm
 
-if [[ "$confirm" != "yes" ]]; then
-    echo -e "${YELLOW}已取消卸载${NC}"
-    exit 0
-fi
 
 echo -e "${BLUE}停止并禁用服务...${NC}"
 if systemctl is-active --quiet ${SERVICE_NAME}; then
