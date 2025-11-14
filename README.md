@@ -32,7 +32,6 @@ wget -qO- https://raw.githubusercontent.com/twj0/subcheck/master/deploy.sh | sud
 wget -qO- https://ghfast.top/https://raw.githubusercontent.com/twj0/subcheck/master/deploy.sh | sudo bash
 ```
 
-
 - **脚本行为**：自动检测架构选择最新发布版二进制，并同步 `ipcheck/ip.sh` 与 `/etc/subcheck/config.yaml`，最终创建 `subcheck.service` systemd 服务。
 
 如果想删除也可以使用curl命令或者wget命令运行题目里下的del.sh脚本
@@ -45,7 +44,63 @@ wget -qO- https://raw.githubusercontent.com/twj0/subcheck/master/del.sh | sudo b
 wget -qO- https://ghfast.top/https://raw.githubusercontent.com/twj0/subcheck/master/del.sh | sudo bash
 ```
 
-### 2.1 推荐：直接使用发布版二进制
+### 2.1 启动服务
+
+部署完成后，可以通过以下方式启动和管理服务：
+
+#### 使用 systemd（系统级安装）
+
+如果使用 root 权限执行部署脚本，服务将作为 systemd 服务安装：
+
+```bash
+# 启动服务
+sudo systemctl start subcheck.service
+
+# 查看服务状态
+sudo systemctl status subcheck.service
+
+# 重启服务
+sudo systemctl restart subcheck.service
+
+# 查看日志
+sudo journalctl -u subcheck.service -f
+```
+
+#### 使用用户级服务管理脚本
+
+如果以普通用户执行部署脚本，将安装用户级服务管理脚本：
+
+```bash
+# 启动服务
+~/.local/share/subcheck/subcheck-service start
+
+# 或者如果 PATH 已配置
+subcheck-service start
+
+# 查看服务状态
+subcheck-service status
+
+# 重启服务
+subcheck-service restart
+
+# 查看日志
+subcheck-service logs
+```
+
+#### 使用全局命令面板
+
+无论哪种安装方式，都可以使用全局命令 `subcheck` 打开交互式管理面板：
+
+```bash
+subcheck
+```
+
+在面板中可以选择：
+- 选项 4: 查看服务状态
+- 选项 5: 重启服务
+- 选项 6: 查看日志
+
+### 2.2 推荐：直接使用发布版二进制
 
 - **确认架构**：在目标 VPS 上执行 `uname -m`（可能返回 `x86_64`、`aarch64` 等），并在 [GitHub Releases](https://github.com/twj0/subcheck/releases) 页面选择匹配架构的最新版本（文件名形如 `subcheck_linux_<arch>`）。
 
@@ -78,7 +133,7 @@ vi ~/subcheck/config/config.yaml
 > 建议将二进制移动到 `/usr/local/bin/subcheck` 并结合 `systemd`、`nohup` 等方式守护运行。
 
 
-### 2.2 Docker 部署（可选）
+### 2.3 Docker 部署（可选）
 
 - **构建镜像**：
 
@@ -118,7 +173,7 @@ services:
 
 执行 `docker compose up -d --build` 即可完成部署。
 
-### 2.3 Web 管理面板
+### 2.4 Web 管理面板
 
 部署完成后，可通过浏览器访问 Web 管理面板进行可视化管理。
 

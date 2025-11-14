@@ -29,10 +29,11 @@ show_menu() {
     echo -e "${GREEN}2.${NC} 卸载程序"
     echo -e "${GREEN}3.${NC} 编辑配置文件"
     echo -e "${GREEN}4.${NC} 查看服务状态"
-    echo -e "${GREEN}5.${NC} 重启服务"
-    echo -e "${GREEN}6.${NC} 查看日志"
+    echo -e "${GREEN}5.${NC} 启动服务"
+    echo -e "${GREEN}6.${NC} 重启服务"
+    echo -e "${GREEN}7.${NC} 查看日志"
     echo ""
-    echo -ne "${YELLOW}请选择操作 [0-6]: ${NC}"
+    echo -ne "${YELLOW}请选择操作 [0-7]: ${NC}"
 }
 
 update_subcheck() {
@@ -183,6 +184,35 @@ show_status() {
     fi
 }
 
+start_service() {
+    echo -e "${BLUE}启动服务...${NC}"
+    if [[ "${MODE:-}" == "systemd" ]]; then
+        if systemctl start ${SERVICE_NAME}; then
+            echo -e "${GREEN}服务已启动${NC}"
+        else
+            echo -e "${RED}服务启动失败${NC}"
+            return 1
+        fi
+    else
+        local svc_cmd=""
+        if [[ -x "${INSTALL_DIR}/subcheck-service" ]]; then
+            svc_cmd="${INSTALL_DIR}/subcheck-service"
+        elif [[ -x "$HOME/.local/bin/subcheck-service" ]]; then
+            svc_cmd="$HOME/.local/bin/subcheck-service"
+        else
+            echo -e "${RED}subcheck-service 未找到，请重新安装${NC}"
+            return 1
+        fi
+
+        if "${svc_cmd}" start; then
+            echo -e "${GREEN}服务已启动${NC}"
+        else
+            echo -e "${RED}服务启动失败（请先执行: ${svc_cmd} start；或运行 ${svc_cmd} logs 查看错误）${NC}"
+            return 1
+        fi
+    fi
+}
+
 restart_service() {
     echo -e "${BLUE}重启服务...${NC}"
     if [[ "${MODE:-}" == "systemd" ]]; then
@@ -226,7 +256,30 @@ show_logs() {
             echo -e "${RED}subcheck-service 未找到${NC}"
             return 1
         fi
-        "${svc_cmd}" logs
+        
+        # 检查是否支持使用nano查看日志
+        if command -v nano &>/dev/null; then
+            echo -e "${YELLOW}选择日志查看方式:${NC}"
+            echo -e "${GREEN}1.${NC} 实时日志 (默认)"
+            echo -e "${GREEN}2.${NC} 使用 nano 查看最新日志"
+            echo -ne "${YELLOW}请选择 [1-2]: ${NC}"
+            read -r log_choice
+            
+            case $log_choice in
+                2)
+                    # 创建临时日志文件用于nano查看
+                    TMP_LOG_FILE=$(mktemp)
+                    "${svc_cmd}" logs > "$TMP_LOG_FILE" 2>&1
+                    nano "$TMP_LOG_FILE"
+                    rm -f "$TMP_LOG_FILE"
+                    ;;
+                *)
+                    "${svc_cmd}" logs
+                    ;;
+            esac
+        else
+            "${svc_cmd}" logs
+        fi
     fi
 }
 
@@ -275,9 +328,12 @@ main() {
                 show_status
                 ;;
             5)
-                restart_service
+                start_service
                 ;;
             6)
+                restart_service
+                ;;
+            7)
                 show_logs
                 ;;
             *)
