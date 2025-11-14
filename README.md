@@ -7,6 +7,8 @@
 
 `subcheck` 旨在简化代理节点的管理流程，通过丰富的测试功能筛选出高质量、可用的节点，并将其转换为多种主流客户端支持的格式。
 
+---
+
 ## 2. 使用指南
 
 ### 2.0 快速开始：一键部署脚本
@@ -32,9 +34,9 @@ wget -qO- https://raw.githubusercontent.com/twj0/subcheck/master/deploy.sh | sud
 wget -qO- https://ghfast.top/https://raw.githubusercontent.com/twj0/subcheck/master/deploy.sh | sudo bash
 ```
 
-- **脚本行为**：自动检测架构选择最新发布版二进制，并同步 `ipcheck/ip.sh` 与 `/etc/subcheck/config.yaml`，最终创建 `subcheck.service` systemd 服务。
+**脚本行为**：自动检测架构选择最新发布版二进制，并同步 `ipcheck/ip.sh` 与 `/etc/subcheck/config.yaml`，最终创建 `subcheck.service` systemd 服务。
 
-如果想删除也可以使用curl命令或者wget命令运行题目里下的del.sh脚本
+如果想**删除**也可以使用curl命令或者wget命令运行题目里下的del.sh脚本
 
 ```bash
 wget -qO- https://raw.githubusercontent.com/twj0/subcheck/master/del.sh | sudo bash
@@ -43,6 +45,7 @@ wget -qO- https://raw.githubusercontent.com/twj0/subcheck/master/del.sh | sudo b
 ```bash
 wget -qO- https://ghfast.top/https://raw.githubusercontent.com/twj0/subcheck/master/del.sh | sudo bash
 ```
+
 
 ### 2.1 启动服务
 
@@ -95,12 +98,11 @@ subcheck-service logs
 subcheck
 ```
 
-在面板中可以选择：
-- 选项 4: 查看服务状态
-- 选项 5: 重启服务
-- 选项 6: 查看日志
+---
 
-### 2.2 推荐：直接使用发布版二进制
+#### 其它方式
+
+### 2.2 直接使用发布版
 
 - **确认架构**：在目标 VPS 上执行 `uname -m`（可能返回 `x86_64`、`aarch64` 等），并在 [GitHub Releases](https://github.com/twj0/subcheck/releases) 页面选择匹配架构的最新版本（文件名形如 `subcheck_linux_<arch>`）。
 
@@ -208,6 +210,8 @@ services:
   - Clash 格式：`http://<IP>:<端口>/sub/all.yaml`
   - Base64 格式：`http://<IP>:<端口>/sub/base64.txt`
   - Mihomo 配置：`http://<IP>:<端口>/sub/mihomo.yaml`
+
+---
 
 
 ## 3. 本地开发与构建
