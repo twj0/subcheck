@@ -16,12 +16,22 @@
 ```bash
 curl -fsSL https://raw.githubusercontent.com/twj0/subcheck/master/deploy.sh | sudo bash
 ```
+如果是大陆用户`curl` github 超时(timeout)
+可以考虑使用镜像网站(比如使用[ghfast.top](https://ghfast.top))加速GitHub
+```bash
+curl -fsSL https://ghfast.top/https://raw.githubusercontent.com/twj0/subcheck/master/deploy.sh | sudo bash
+```
 
 或使用 `wget`：
 
 ```bash
 wget -qO- https://raw.githubusercontent.com/twj0/subcheck/master/deploy.sh | sudo bash
 ```
+同理
+```bash
+wget -qO- https://ghfast.top/https://raw.githubusercontent.com/twj0/subcheck/master/deploy.sh | sudo bash
+```
+
 
 - **脚本行为**：自动检测架构选择最新发布版二进制，并同步 `ipcheck/ip.sh` 与 `/etc/subcheck/config.yaml`，最终创建 `subcheck.service` systemd 服务。
 
