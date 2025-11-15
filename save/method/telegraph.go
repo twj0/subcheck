@@ -42,7 +42,12 @@ type TelegraphPayload struct {
 
 // UploadToTelegraph 上传数据到 Telegraph
 func UploadToTelegraph(data []byte, filename string) error {
-	client := &http.Client{Timeout: 30 * time.Second}
+	// 只上传 mihomo.yaml 到远程存储
+	if filename != "mihomo.yaml" {
+		return nil
+	}
+	
+	client := &http.Client{Timeout: 60 * time.Second}
 
 	content := []TelegraphContent{
 		{Tag: "pre", Children: []any{string(data)}},

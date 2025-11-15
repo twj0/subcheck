@@ -138,7 +138,7 @@ func (cs *ConfigSaver) saveCategory(category ProxyCategory) error {
 		return nil
 	}
 
-	// 使用所有配置的保存方法
+	// 远程存储只保存 mihomo.yaml，本地保存所有格式
 	for _, saveMethod := range cs.saveMethods {
 		if err := saveMethod(data, category.Name); err != nil {
 			slog.Error(fmt.Sprintf("保存 %s 失败: %v", category.Name, err))

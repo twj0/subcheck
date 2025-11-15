@@ -242,9 +242,6 @@
             <div class="col-md-8 col-sm-12">
                 <h1 class="mb-0">subcheck 配置管理</h1>
             </div>
-            <div class="col-md-4 col-sm-12 text-md-end">
-                <small class="text-muted" id="versionInfo">版本: 加载中...</small>
-            </div>
         </div>
         
         <!-- 项目信息 -->
@@ -934,25 +931,7 @@
         setInterval(loadLogs, 10000);
         setInterval(updateStatus, 5000);
         
-        // 获取版本信息
-        function getVersionInfo() {
-            fetch('/api/version', {
-                headers: addApiKeyHeader()
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data && data.version) {
-                    document.getElementById('versionInfo').textContent = '版本: ' + data.version;
-                }
-            })
-            .catch(error => {
-                console.error('获取版本信息失败:', error);
-                document.getElementById('versionInfo').textContent = '版本: 未知';
-            });
-        }
-        
-        // 初始加载版本信息
-        getVersionInfo();
+
     </script>
     
     <!-- YAML解析库 -->

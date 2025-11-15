@@ -42,6 +42,10 @@ func NewR2Uploader() *R2Uploader {
 
 // UploadToR2Storage 上传数据到R2存储的入口函数
 func UploadToR2Storage(yamlData []byte, filename string) error {
+	// 只上传 mihomo.yaml 到远程存储
+	if filename != "mihomo.yaml" {
+		return nil
+	}
 	uploader := NewR2Uploader()
 	return uploader.Upload(yamlData, filename)
 }

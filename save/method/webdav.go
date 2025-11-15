@@ -37,6 +37,11 @@ func NewWebDAVUploader() *WebDAVUploader {
 
 // UploadToWebDAV 上传数据到 WebDAV 的入口函数
 func UploadToWebDAV(yamlData []byte, filename string) error {
+	// 只上传 mihomo.yaml 到远程存储
+	if filename != "mihomo.yaml" {
+		return nil
+	}
+	
 	uploader := NewWebDAVUploader()
 	return uploader.Upload(yamlData, filename)
 }
@@ -120,6 +125,7 @@ func (w *WebDAVUploader) createRequest(yamlData []byte, filename string) (*http.
 	}
 
 	url := baseURL + filename
+	slog.Debug("WebDAV请求", "url", url, "size", len(yamlData))
 
 	req, err := http.NewRequest("PUT", url, bytes.NewBuffer(yamlData))
 	if err != nil {

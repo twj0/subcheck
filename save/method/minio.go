@@ -31,6 +31,11 @@ func ValiS3Config() error {
 // UploadToS3 uploads data to a MinIO bucket.
 // The 'filename' parameter will be used as the object name in the bucket.
 func UploadToS3(data []byte, filename string) error {
+	// 只上传 mihomo.yaml 到远程存储
+	if filename != "mihomo.yaml" {
+		return nil
+	}
+	
 	ctx := context.Background()
 	endpoint := config.GlobalConfig.S3Endpoint
 	accessKeyID := config.GlobalConfig.S3AccessID

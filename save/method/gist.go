@@ -41,9 +41,8 @@ type GistUploader struct {
 
 // NewGistUploader 创建新的 Gist 上传器
 func NewGistUploader() *GistUploader {
-	if config.GlobalConfig.GithubAPIMirror != "" {
-		gistAPIURL = config.GlobalConfig.GithubAPIMirror + "/gists"
-	}
+	// 默认使用官方API，镜像站通常不支持PATCH方法
+	gistAPIURL = "https://api.github.com/gists"
 	return &GistUploader{
 		client:   &http.Client{Timeout: 30 * time.Second},
 		token:    config.GlobalConfig.GithubToken,
@@ -52,8 +51,12 @@ func NewGistUploader() *GistUploader {
 	}
 }
 
-// UploadToGist 上传数据到 Gist 的入口函数
+// UploadToGist 上传数据到 Gist 的入口函数（仅上传 mihomo.yaml）
 func UploadToGist(yamlData []byte, filename string) error {
+	// 只上传 mihomo.yaml 到远程 Gist
+	if filename != "mihomo.yaml" {
+		return nil
+	}
 	uploader := NewGistUploader()
 	return uploader.Upload(yamlData, filename)
 }
@@ -144,7 +147,7 @@ func (g *GistUploader) doUpload(jsonData []byte) error {
 // createRequest 创建HTTP请求
 func (g *GistUploader) createRequest(jsonData []byte) (*http.Request, error) {
 	url := gistAPIURL + "/" + g.id
-	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
+	req, err := http.NewRequest("PATCH", url, bytes.NewBuffer(jsonData))
 	if err != nil {
 		return nil, fmt.Errorf("创建请求失败: %w", err)
 	}

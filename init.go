@@ -8,6 +8,7 @@ import (
 	_ "net/http/pprof"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/lmittmann/tint"
 	mihomoLog "github.com/metacubex/mihomo/log"
@@ -21,6 +22,10 @@ var CurrentCommit = "unknown"
 var TempLog string
 
 func init() {
+	// 设置时区为东八区
+	loc, _ := time.LoadLocation("Asia/Shanghai")
+	time.Local = loc
+
 	// 设置依赖库日志级别
 	if os.Getenv("MIHOMO_DEBUG") != "" {
 		mihomoLog.SetLevel(mihomoLog.DEBUG)
