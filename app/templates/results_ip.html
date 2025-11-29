@@ -13,6 +13,41 @@
       <a class="btn btn-outline-secondary btn-sm" href="/admin">Back</a>
     </div>
 
+    <div class="row g-3 mb-3">
+      <div class="col-md-3">
+        <div class="card shadow-sm bg-dark text-white border-0">
+          <div class="card-body">
+            <div class="text-uppercase small text-muted mb-1">Total Records</div>
+            <div class="h4 mb-0" id="stat_total">-</div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card shadow-sm bg-dark text-white border-0">
+          <div class="card-body">
+            <div class="text-uppercase small text-muted mb-1">High &amp; VeryHigh (Page)</div>
+            <div class="h4 mb-0"><span id="stat_high_page">-</span> <small class="text-muted">(<span id="stat_high_ratio">-</span>)</small></div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card shadow-sm bg-dark text-white border-0">
+          <div class="card-body">
+            <div class="text-uppercase small text-muted mb-1">Avg FraudScore (Page)</div>
+            <div class="h4 mb-0" id="stat_avg_score">-</div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card shadow-sm bg-dark text-white border-0">
+          <div class="card-body">
+            <div class="text-uppercase small text-muted mb-1">Last Updated</div>
+            <div class="small text-muted" id="stat_last_time">-</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div class="card mb-3">
       <div class="card-body">
         <div class="row g-2">
@@ -56,36 +91,242 @@
   </div>
 
   <script>
-    let page=1, size=20;
-    function apiKey(){ return localStorage.getItem('apiKey')||''; }
-    function qsel(id){ return document.getElementById(id).value.trim(); }
-    function showError(msg){ const a=document.getElementById('alert'); a.textContent=msg; a.classList.remove('d-none'); }
-    function fmtBool(v){ return v && v.Valid ? (v.Bool? 'Yes':'No') : ''; }
+    let page = 1, size = 20;
 
-    function load(){
-      const params = new URLSearchParams({ page, page_size: size, ip: qsel('q_ip'), country: qsel('q_country'), risk: qsel('q_risk'), sort_by: qsel('q_sort'), sort_dir: qsel('q_dir') });
-      fetch('/api/results/ip-quality?'+params.toString(), { headers: { 'X-API-Key': apiKey() } })
-        .then(r=>{ if(r.status===401) throw new Error('unauthorized'); return r.json(); })
-        .then(d=>{
-          const tb=document.getElementById('tbody'); tb.innerHTML='';
-          (d.items||[]).forEach(x=>{
-            const tr=document.createElement('tr');
-            tr.innerHTML=`<td>${x.TestTime||x.test_time||''}</td>
-              <td>${x.IPAddress?.String||x.ip_address||''}</td>
-              <td>${x.FraudScore?.Int64 ?? x.fraud_score ?? ''}</td>
-              <td>${x.RiskLevel?.String||x.risk_level||''}</td>
-              <td>${fmtBool(x.IsProxy||{})}</td>
-              <td>${fmtBool(x.IsVPN||{})}</td>
-              <td>${fmtBool(x.IsTor||{})}</td>
-              <td>${x.CountryCode?.String||x.country_code||''}</td>`;
+    function apiKey() {
+      return localStorage.getItem('apiKey') || '';
+    }
+
+    function qsel(id) {
+      return document.getElementById(id).value.trim();
+    }
+
+    function showError(msg) {
+      const a = document.getElementById('alert');
+      a.textContent = msg;
+      a.classList.remove('d-none');
+    }
+
+    function normalizeRisk(level) {
+      const l = (level || '').toLowerCase();
+      if (!l) return 'Unknown';
+      switch (l) {
+        case 'verylow':
+          return 'VeryLow';
+        case 'low':
+          return 'Low';
+        case 'medium':
+          return 'Medium';
+        case 'high':
+          return 'High';
+        case 'veryhigh':
+          return 'VeryHigh';
+        default:
+          return level;
+      }
+    }
+
+    function riskBadge(level) {
+      const norm = normalizeRisk(level);
+      const lower = norm.toLowerCase();
+      let cls = 'bg-secondary';
+      if (lower === 'verylow' || lower === 'low') {
+        cls = 'bg-success';
+      } else if (lower === 'medium') {
+        cls = 'bg-warning text-dark';
+      } else if (lower === 'high' || lower === 'veryhigh') {
+        cls = 'bg-danger';
+      }
+      return '<span class="badge ' + cls + '">' + norm + '</span>';
+    }
+
+    function riskRowClass(level) {
+      const lower = normalizeRisk(level).toLowerCase();
+      if (lower === 'veryhigh') {
+        return 'table-danger';
+      }
+      if (lower === 'high') {
+        return 'table-warning';
+      }
+      if (lower === 'low' || lower === 'verylow') {
+        return 'table-success';
+      }
+      return '';
+    }
+
+    function scoreValue(raw) {
+      if (typeof raw === 'number') {
+        return raw;
+      }
+      if (typeof raw === 'string') {
+        const n = parseInt(raw, 10);
+        return isNaN(n) ? 0 : n;
+      }
+      return 0;
+    }
+
+    function scoreBarClass(score) {
+      if (score <= 10) {
+        return 'bg-success';
+      }
+      if (score <= 25) {
+        return 'bg-success';
+      }
+      if (score <= 50) {
+        return 'bg-warning text-dark';
+      }
+      if (score <= 75) {
+        return 'bg-danger';
+      }
+      return 'bg-danger';
+    }
+
+    function fmtFlag(v, label) {
+      if (v && typeof v === 'object' && 'Valid' in v) {
+        if (!v.Valid || !v.Bool) {
+          return '';
+        }
+      } else if (!v) {
+        return '';
+      }
+      return '<span class="badge bg-info text-dark me-1">' + label + '</span>';
+    }
+
+    function computeStats(items) {
+      let high = 0;
+      let veryHigh = 0;
+      let sumScore = 0;
+      let cntScore = 0;
+      let lastTime = '';
+      items.forEach(function (x) {
+        const riskRaw = (x.RiskLevel && x.RiskLevel.String) || x.risk_level || '';
+        const norm = normalizeRisk(riskRaw);
+        const lower = norm.toLowerCase();
+        if (lower === 'high') {
+          high += 1;
+        } else if (lower === 'veryhigh') {
+          veryHigh += 1;
+        }
+        const rawScore = (x.FraudScore && typeof x.FraudScore.Int64 !== 'undefined' ? x.FraudScore.Int64 : x.fraud_score);
+        const s = scoreValue(rawScore);
+        if (s > 0) {
+          sumScore += s;
+          cntScore += 1;
+        }
+        const t = x.TestTime || x.test_time || '';
+        if (t && (!lastTime || t > lastTime)) {
+          lastTime = t;
+        }
+      });
+      const totalHigh = high + veryHigh;
+      const pageCount = items.length || 0;
+      return {
+        total: pageCount,
+        high: totalHigh,
+        highRatio: pageCount && totalHigh ? (totalHigh * 100 / pageCount).toFixed(1) + '%' : '-',
+        avgScore: cntScore ? (sumScore / cntScore).toFixed(1) : '-',
+        lastTime: lastTime || '-'
+      };
+    }
+
+    function renderStats(stats, totalFromServer) {
+      var totalEl = document.getElementById('stat_total');
+      if (totalEl) {
+        totalEl.textContent = typeof totalFromServer === 'number' && totalFromServer >= 0 ? totalFromServer : stats.total;
+      }
+      var highEl = document.getElementById('stat_high_page');
+      if (highEl) {
+        highEl.textContent = stats.high;
+      }
+      var ratioEl = document.getElementById('stat_high_ratio');
+      if (ratioEl) {
+        ratioEl.textContent = stats.highRatio;
+      }
+      var avgEl = document.getElementById('stat_avg_score');
+      if (avgEl) {
+        avgEl.textContent = stats.avgScore;
+      }
+      var timeEl = document.getElementById('stat_last_time');
+      if (timeEl) {
+        timeEl.textContent = stats.lastTime;
+      }
+    }
+
+    function load() {
+      const params = new URLSearchParams({
+        page: page,
+        page_size: size,
+        ip: qsel('q_ip'),
+        country: qsel('q_country'),
+        risk: qsel('q_risk'),
+        sort_by: qsel('q_sort'),
+        sort_dir: qsel('q_dir')
+      });
+      fetch('/api/results/ip-quality?' + params.toString(), { headers: { 'X-API-Key': apiKey() } })
+        .then(function (r) {
+          if (r.status === 401) {
+            throw new Error('unauthorized');
+          }
+          return r.json();
+        })
+        .then(function (d) {
+          const tb = document.getElementById('tbody');
+          tb.innerHTML = '';
+          const items = d.items || [];
+          items.forEach(function (x) {
+            const tr = document.createElement('tr');
+            const time = x.TestTime || x.test_time || '';
+            const ip = (typeof x.IPAddress === 'string' && x.IPAddress) || (x.IPAddress && x.IPAddress.String) || x.ip_address || '';
+            const rawScore = (x.FraudScore && typeof x.FraudScore.Int64 !== 'undefined' ? x.FraudScore.Int64 : x.fraud_score);
+            const score = scoreValue(rawScore);
+            const riskRaw = (x.RiskLevel && x.RiskLevel.String) || x.risk_level || '';
+            const risk = normalizeRisk(riskRaw);
+            const rowClass = riskRowClass(risk);
+            const scoreWidth = Math.max(0, Math.min(100, score || 0));
+            const scoreText = rawScore != null ? rawScore : '';
+            tr.className = rowClass;
+            tr.innerHTML =
+              '<td class="text-nowrap small text-muted">' + time + '</td>' +
+              '<td class="font-monospace">' + ip + '</td>' +
+              '<td>' +
+                '<div class="d-flex align-items-center gap-2">' +
+                  '<span class="fw-semibold">' + scoreText + '</span>' +
+                  '<div class="progress flex-grow-1" style="height:4px;">' +
+                    '<div class="progress-bar ' + scoreBarClass(score) + '" role="progressbar" style="width:' + scoreWidth + '%" aria-valuenow="' + (score || 0) + '" aria-valuemin="0" aria-valuemax="100"></div>' +
+                  '</div>' +
+                '</div>' +
+              '</td>' +
+              '<td>' + riskBadge(risk) + '</td>' +
+              '<td>' + fmtFlag(x.IsProxy, 'Proxy') + '</td>' +
+              '<td>' + fmtFlag(x.IsVPN, 'VPN') + '</td>' +
+              '<td>' + fmtFlag(x.IsTor, 'Tor') + '</td>' +
+              '<td>' + ((x.CountryCode && x.CountryCode.String) || x.country_code || '') + '</td>';
             tb.appendChild(tr);
           });
-          document.getElementById('pginfo').textContent = `Page ${page}, Total ${d.total||0}`;
-        }).catch(e=> showError(e.message));
+          const total = typeof d.total === 'number' ? d.total : 0;
+          const stats = computeStats(items);
+          renderStats(stats, total);
+          document.getElementById('pginfo').textContent = 'Page ' + page + ', Total ' + (d.total || 0);
+        })
+        .catch(function (e) {
+          showError(e.message);
+        });
     }
-    document.getElementById('btnQuery').onclick=()=>{ page=1; load(); };
-    document.getElementById('prev').onclick=()=>{ if(page>1){ page--; load(); } };
-    document.getElementById('next').onclick=()=>{ page++; load(); };
+
+    document.getElementById('btnQuery').onclick = function () {
+      page = 1;
+      load();
+    };
+    document.getElementById('prev').onclick = function () {
+      if (page > 1) {
+        page--;
+        load();
+      }
+    };
+    document.getElementById('next').onclick = function () {
+      page++;
+      load();
+    };
     load();
   </script>
 </body>

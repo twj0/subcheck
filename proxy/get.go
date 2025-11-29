@@ -21,12 +21,18 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+/*
+ * GetProxies 函数用于获取代理服务器列表
+ * 该函数会解析本地与远程订阅链接，并发获取代理信息
+ * 返回解析后的代理列表和可能的错误
+ */
 func GetProxies() ([]map[string]any, error) {
 
 	// 解析本地与远程订阅清单
 	subUrls, localNum, remoteNum := resolveSubUrls()
 	slog.Info("订阅链接数量", "本地", localNum, "远程", remoteNum, "总计", len(subUrls))
 
+	// 如果配置了节点类型，则只筛选用户设置的协议
 	if len(config.GlobalConfig.NodeType) > 0 {
 		slog.Info("只筛选用户设置的协议", "type", config.GlobalConfig.NodeType)
 	}
@@ -54,26 +60,31 @@ func GetProxies() ([]map[string]any, error) {
 			defer wg.Done()
 			defer func() { <-concurrentLimit }() // 释放令牌
 
+			// 从订阅链接获取数据
 			data, err := GetDateFromSubs(url)
 			if err != nil {
 				slog.Error(fmt.Sprintf("获取订阅链接错误跳过: %v", err))
 				return
 			}
 
+			// 解析订阅链接标签
 			var tag string
 			if d, err := u.Parse(url); err == nil {
 				tag = d.Fragment
 			}
 
 			var con map[string]any
+			// 尝试解析 YAML 格式的订阅
 			err = yaml.Unmarshal(data, &con)
 			if err != nil {
+				// 如果不是 YAML 格式，尝试转换为 V2Ray 格式
 				proxyList, err := convert.ConvertsV2Ray(data)
 				if err != nil {
 					slog.Error(fmt.Sprintf("解析proxy错误: %v", err), "url", url)
 					return
 				}
 				slog.Debug(fmt.Sprintf("获取订阅链接: %s，有效节点数量: %d", url, len(proxyList)))
+				// 处理转换后的代理列表
 				for _, proxy := range proxyList {
 					// 只测试指定协议
 					if t, ok := proxy["type"].(string); ok {
@@ -90,6 +101,7 @@ func GetProxies() ([]map[string]any, error) {
 				return
 			}
 
+			// 处理 YAML 格式的订阅
 			proxyInterface, ok := con["proxies"]
 			if !ok || proxyInterface == nil {
 				slog.Error(fmt.Sprintf("订阅链接没有proxies: %s", url))
@@ -101,6 +113,7 @@ func GetProxies() ([]map[string]any, error) {
 				return
 			}
 			slog.Debug(fmt.Sprintf("获取订阅链接: %s，有效节点数量: %d", url, len(proxyList)))
+			// 处理代理列表
 			for _, proxy := range proxyList {
 				if proxyMap, ok := proxy.(map[string]any); ok {
 					if t, ok := proxyMap["type"].(string); ok {
@@ -137,11 +150,18 @@ func GetProxies() ([]map[string]any, error) {
 
 // from 3k
 // resolveSubUrls 合并本地与远程订阅清单并去重
+// resolveSubUrls 函数用于解析和合并本地及远程的订阅URL列表
+// 返回值：
+//   - []string: 合并并去重后的URL列表
+//   - int: 本地配置的URL数量
+//   - int: 远程配置的URL数量
 func resolveSubUrls() ([]string, int, int) {
-	// 计数
+	// 计数器，用于统计本地和远程的URL数量
 	var localNum, remoteNum int
+	// 获取本地配置的URL数量
 	localNum = len(config.GlobalConfig.SubUrls)
 
+	// 初始化URL切片，容量设置为本地配置的URL数量
 	urls := make([]string, 0, len(config.GlobalConfig.SubUrls))
 	// 本地配置
 	urls = append(urls, config.GlobalConfig.SubUrls...)

@@ -1,8 +1,6 @@
 services:
   subcheck:
-    build:
-      context: .
-    image: subcheck:latest
+    image: ghcr.io/twj0/subcheck:latest
     container_name: subcheck
     ports:
       - "14567:14567"

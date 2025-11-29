@@ -137,13 +137,13 @@ vi ~/subcheck/config/config.yaml
 
 ### 2.3 Docker 部署（可选）
 
-- **构建镜像**：
+- **拉取镜像（推荐）**：
 
 ```bash
-docker build -t subcheck:latest .
+docker pull ghcr.io/twj0/subcheck:latest
 ```
 
-- **启动容器**：挂载本地配置与输出目录，便于管理。
+- **使用 Docker 直接运行**：挂载本地配置与输出目录，便于管理。
 
 ```bash
 docker run -d --name subcheck \
@@ -151,7 +151,7 @@ docker run -d --name subcheck \
   -v $(pwd)/config:/app/config \
   -v $(pwd)/output:/app/output \
   --restart=always \
-  subcheck:latest
+  ghcr.io/twj0/subcheck:latest
 ```
 
 - **Docker Compose 示例**：
@@ -159,9 +159,7 @@ docker run -d --name subcheck \
 ```yaml
 services:
   subcheck:
-    build:
-      context: .
-    image: subcheck:latest
+    image: ghcr.io/twj0/subcheck:latest
     container_name: subcheck
     ports:
       - "14567:14567"
@@ -173,7 +171,7 @@ services:
     restart: always
 ```
 
-执行 `docker compose up -d --build` 即可完成部署。
+执行 `docker compose up -d` 即可完成部署。
 
 ---
 
@@ -383,6 +381,47 @@ $env:CGO_ENABLED="0"
 go build -trimpath -ldflags "-s -w -X main.Version=dev -X main.CurrentCommit=unknown" -o subcheck_linux_amd64
 ```
 
+
+## 6. 节点测试与 IP 风控原理
+
+本项目在原始 subs-check 的基础上，增加了节点风控能力（IP 纯净度检测），帮助用户快速识别“脏 IP” 节点。总体流程可以概括为：
+
+- **订阅拉取与解析**：
+  - 通过 `sub-urls` / `sub-urls-remote` 从多个上游订阅源获取节点。
+  - 使用 mihomo 的解析能力统一解析为内部 `proxy` 映射（`check.Result.Proxy`）。
+
+- **并发节点测试（`check.Check`）**：
+  - 为每个节点创建独立的 `ProxyClient`，按配置执行连通性、速度与流媒体等检测。
+  - 如果 `media-check` 启用，会根据 `platforms` 列表依次检测 OpenAI、Netflix、YouTube、TikTok 等可用性。
+
+- **IP 纯净度检测（IP 风控）**：
+  - 当 `platforms` 中包含 `iprisk` 时，会调用 `CheckIPRisk`，基于远程风险数据库（如 Scamalytics）对出口 IP 打分。
+  - 检测结果会写入 `check.Result`：
+    - `IP`：出口 IP 地址
+    - `Country`：IP 所在国家/地区
+    - `IPRisk`：风险分数（例如 `10%`、`80%`），数值越高代表“越脏”的 IP。
+
+- **节点命名与标签**：
+  - 根据测速、流媒体解锁和 IP 纯净度结果，对节点名称进行二次加工（例如附加 `NF`、`GPT`、`10%` 等标签）。
+  - 这样在 Web 面板和 `all.yaml` 订阅中，也能直观看到每个节点的基础质量与风控信息。
+
+- **配置输出与 mihomo.yaml 增强**：
+  - 所有检测结果会通过 `save.SaveConfig` 汇总，并生成多种订阅输出格式：`all.yaml`、`base64.txt`、`mihomo.yaml` 等。
+  - 对于 `mihomo.yaml`，在从 Sub-Store 获取基础配置后，会根据最新检测结果为每个节点注入额外字段：
+    - `ip_risk`：IP 风险分数（如 `10%`）
+    - `ip_country`：IP 所属国家/地区
+    - `ip_address`：出口 IP 地址
+  - 这些字段不会影响 mihomo/clash.meta 的正常使用，但可以在客户端或外部工具中被读取，用于更精细的风控决策（例如在规则中优先使用低风险节点）。
+
+  - 在二次开发中，还额外将测速结果一并写入 mihomo.yaml，字段为：
+    - `speed_kbps`：该节点在本次检测中的下行速度（以 KB/s 为单位）。
+  - 这一系列字段的来源与写入流程为：
+    - `check.Result`：在 `check/check.go` 中定义，用于存放每个节点的检测结果，包括 `IP`、`Country`、`IPRisk`、`SpeedKBps` 等；
+    - `check.Check`：完成节点连通性、速度及流媒体/IP 风控检测后，返回 `[]Result`；
+    - `save.SaveConfig`：在 `save/save.go` 中作为输出入口，创建 `ConfigSaver` 并生成 `all.yaml` / `mihomo.yaml` / `base64.txt`；
+    - `ConfigSaver.injectIPQualityToMihomo`：解析从 Sub-Store 拉取的 `mihomo` 配置，根据节点名称匹配对应的 `Result`，并将 `ip_risk`、`ip_country`、`ip_address`、`speed_kbps` 这些字段注入到每个节点的配置中，再重新序列化为最终的 `mihomo.yaml`。
+
+通过上述链路，`subcheck` 不仅可以做基础的连通性与测速，还可以为每个节点附加包含「速度 + 国家/地区 + IP + 风险」在内的完整 IP 纯净度信息，方便你在选择节点时做出更安全、可靠的判断。
 
 
 ## 感谢

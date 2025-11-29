@@ -140,10 +140,39 @@ sub-store-produce-cron: ""
 # 注意：仅需修改 XXXXXXXXXXXX 为自己的 token，[推送标题]/[推送内容] 会被sub-store自动替换为对应的内容
 sub-store-push-service: ""
 
-
-# 覆写订阅的url，这个的作用是生成带指定规则的mihomo/clash.meta订阅链接
-# 防止网络不好，所以现在内置，依赖:8199端口
-# 如果你想替换其他的自定义覆写文件，自己命名后放在output目录，然后更改此URL后缀即可
+# 覆写订阅的url，用于生成「带指定规则」的 mihomo/clash.meta 订阅链接
+# ===== 高级用法说明 =====
+# 1）本地模板（推荐给喜欢 DIY 规则的用户）
+#    - 所有放在 output 目录下的 .yaml 文件，都会通过 /sub/*.yaml 方式对外暴露
+#    - 例如：你在 output 目录新建 strict.yaml，则订阅地址是：
+#        http://127.0.0.1:8199/sub/strict.yaml
+#    - 想切换为该严格规则模板时，只需要把下面的 mihomo-overwrite-url 改成这个地址即可。
+#
+# 2）远程模板（GitHub / 自建规则仓库）
+#    - 支持直接填写远程 YAML 的 URL，例如：
+#        https://example.com/mihomo/rules.yaml
+#    - 如果以 https://raw.githubusercontent.com 开头，会自动套用 github-proxy（见 github-proxy 配置）。
+#
+# 3）按日期切换模板（时间占位符）
+#    - 支持在 URL 中使用时间占位符，程序会在运行时自动替换：
+#        {Y}      - 年份，例如 2025
+#        {m}      - 月份，01-12
+#        {d}      - 日期，01-31
+#        {Ymd}    - 组合日期，例如 20250131
+#        {Y_m_d}  - 2025_01_31
+#        {Y-m-d}  - 2025-01-31
+#    - 示例：每天使用不同规则文件（在 GitHub 仓库中按日期命名）：
+#        https://raw.githubusercontent.com/yourname/yourrepo/main/mihomo/rules-{Y-m-d}.yaml
+#
+# 4）常见场景模板示例（自行在 output 目录中准备对应文件）：
+#    - 默认：全功能 ACL4SSR 规则（已内置，无需额外准备文件）：
+#        http://127.0.0.1:8199/sub/ACL4SSR_Online_Full.yaml
+#    - 严格规则模板（建议命名为 strict.tmpl.yaml）：
+#        http://127.0.0.1:8199/sub/strict.tmpl.yaml
+#    - 轻量规则模板（建议命名为 lite.tmpl.yaml）：
+#        http://127.0.0.1:8199/sub/lite.tmpl.yaml
+#    - 使用方式：把 strict.tmpl.yaml / lite.tmpl.yaml 放到 output 目录下，然后按需修改本字段。
+# ===== 默认值：内置 ACL4SSR 完整规则（适合大多数用户） =====
 mihomo-overwrite-url: "http://127.0.0.1:8199/sub/ACL4SSR_Online_Full.yaml"
 
 # 保存方法
