@@ -31,6 +31,9 @@ GITHUB_PROXY="${GITHUB_PROXY:-https://ghfast.top/}"
 
 MODE=""
 
+# 检查系统是否安装了指定依赖
+# 参数:
+#   $1: 依赖名称
 ensure_dep() {
     local dep=$1
     if ! command -v "$dep" &>/dev/null; then
@@ -39,6 +42,7 @@ ensure_dep() {
     fi
 }
 
+# 安装系统缺失的依赖项
 install_deps() {
     missing_deps=()
     ensure_dep curl
@@ -68,6 +72,7 @@ install_deps() {
     fi
 }
 
+# 检测系统架构并映射到对应的发布版本名称
 detect_arch() {
     local arch
     arch=$(uname -m)
@@ -83,6 +88,7 @@ detect_arch() {
     esac
 }
 
+# 获取GitHub上最新的发布版本信息
 fetch_latest_release() {
     echo -e "${BLUE}获取最新版本信息...${NC}"
     LATEST_JSON=$(curl -s "https://api.github.com/repos/${GITHUB_REPO}/releases/latest")
@@ -107,6 +113,7 @@ fetch_latest_release() {
     fi
 }
 
+# 下载二进制文件到安装目录
 download_binary() {
     mkdir -p "$INSTALL_DIR"
     echo -e "${BLUE}下载二进制文件...${NC}"
@@ -116,6 +123,7 @@ download_binary() {
     echo -e "${GREEN}二进制文件已安装到 ${INSTALL_DIR}/${BIN_NAME}${NC}"
 }
 
+# 准备必要的资源文件（IP检查脚本和配置文件）
 prepare_assets() {
     mkdir -p "${INSTALL_DIR}/ipcheck"
     if [[ ! -f "$IP_SCRIPT_PATH" ]]; then
@@ -127,15 +135,17 @@ prepare_assets() {
     fi
 
     mkdir -p "$CONFIG_DIR"
-    if [[ ! -f "${CONFIG_DIR}/${CONFIG_NAME}" ]]; then
-        echo -e "${BLUE}下载配置模板...${NC}"
-        curl -sL "${GITHUB_PROXY}https://raw.githubusercontent.com/${GITHUB_REPO}/master/config/config.example.yaml" -o "${CONFIG_DIR}/${CONFIG_NAME}"
-        echo -e "${GREEN}配置文件已写入: ${CONFIG_DIR}/${CONFIG_NAME}${NC}"
-    else
+    if [[ -f "${CONFIG_DIR}/${CONFIG_NAME}" ]]; then
         echo -e "${YELLOW}检测到已有配置文件，保留现有配置。${NC}"
+        return
     fi
+    
+    echo -e "${BLUE}下载配置模板...${NC}"
+    curl -sL "${GITHUB_PROXY}https://raw.githubusercontent.com/${GITHUB_REPO}/master/config/config.example.yaml" -o "${CONFIG_DIR}/${CONFIG_NAME}"
+    echo -e "${GREEN}配置文件已写入: ${CONFIG_DIR}/${CONFIG_NAME}${NC}"
 }
 
+# 创建systemd服务配置文件
 create_systemd_service() {
     echo -e "${BLUE}生成 systemd 服务...${NC}"
     cat > /etc/systemd/system/$SERVICE_NAME <<-EOF
@@ -159,6 +169,7 @@ EOF
     echo -e "${GREEN}systemd 服务已创建并设置为开机自启。${NC}"
 }
 
+# 安装全局命令行工具
 install_global_command() {
     echo -e "${BLUE}安装全局命令...${NC}"
     if [[ "${MODE}" == "systemd" ]]; then
@@ -175,6 +186,7 @@ install_global_command() {
     echo -e "${GREEN}全局命令已安装，可使用 'subcheck' 命令打开管理面板${NC}"
 }
 
+# 配置用户的订阅链接
 configure_sub_urls() {
     echo -e "${GREEN}请输入您的订阅链接 (多个链接用空格分隔，直接回车跳过):${NC}"
     read -r SUB_URLS || true
@@ -185,6 +197,7 @@ configure_sub_urls() {
         echo "$url" >>"$TMP_FILE"
     done
 
+    # 使用awk处理配置文件，将订阅链接插入到sub-urls字段下
     awk -v urls_file="$TMP_FILE" '
     function load_urls() {
         if (loaded) return
@@ -233,6 +246,7 @@ configure_sub_urls() {
     echo -e "${GREEN}订阅链接已写入配置文件。${NC}"
 }
 
+# 显示安装完成后的提示信息
 start_service_prompt() {
     echo -e "\n${GREEN}🎉 subcheck 安装完成！ 🎉${NC}"
     echo -e "\n${YELLOW}快速管理:${NC}"
@@ -242,7 +256,7 @@ start_service_prompt() {
         echo -e "  启动: ${GREEN}systemctl start ${SERVICE_NAME}${NC}"
         echo -e "  状态: ${GREEN}systemctl status ${SERVICE_NAME}${NC}"
     else
-        echo -e "  启动: ${GREEN}subcheck-service start${NC}"
+        echo -e "  启动: ${GREEN}subcheck-service start${NC"
         echo -e "  状态: ${GREEN}subcheck-service status${NC}"
         echo -e "  日志: ${GREEN}subcheck-service logs${NC}"
     fi
@@ -251,6 +265,7 @@ start_service_prompt() {
     echo -e "  密钥: ${GREEN}123456${NC} (请在配置文件中修改)"
 }
 
+# 主函数：执行整个部署流程
 main() {
     echo -e "${BLUE}=== subcheck 一键部署脚本 ===${NC}"
     if [[ -n "$GITHUB_PROXY" ]]; then
@@ -261,6 +276,7 @@ main() {
     fi
     echo ""
 
+    # 确定运行模式(systemd或user)
     MODE="${SUBCHECK_MODE:-}"
     if [[ -z "$MODE" ]]; then
         pid1="$(cat /proc/1/comm 2>/dev/null || ps -p 1 -o comm= 2>/dev/null || echo "")"
@@ -271,6 +287,7 @@ main() {
         fi
     fi
 
+    # 根据运行模式设置相应的目录和权限检查
     if [[ "$MODE" == "systemd" ]]; then
         if [[ $EUID -ne 0 ]]; then
             echo -e "${RED}错误：请使用root用户运行此脚本！${NC}"
