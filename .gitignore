@@ -28,3 +28,4 @@ subcheck_linux_amd64
 proot-distro-error.md
 test_upload.py
 
+sub.txt
