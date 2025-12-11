@@ -256,7 +256,7 @@ start_service_prompt() {
         echo -e "  启动: ${GREEN}systemctl start ${SERVICE_NAME}${NC}"
         echo -e "  状态: ${GREEN}systemctl status ${SERVICE_NAME}${NC}"
     else
-        echo -e "  启动: ${GREEN}subcheck-service start${NC"
+        echo -e "  启动: ${GREEN}subcheck-service start${NC}"
         echo -e "  状态: ${GREEN}subcheck-service status${NC}"
         echo -e "  日志: ${GREEN}subcheck-service logs${NC}"
     fi
