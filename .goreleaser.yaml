@@ -1,6 +1,5 @@
 before:
-  hooks:
-    - go mod tidy
+  hooks: []
 
 project_name: subcheck
 
@@ -15,20 +14,18 @@ builds:
     goarch:
       - amd64
       - arm64
+    binary: >-
+      {{ .ProjectName }}_linux_
+      {{- if eq .Arch "amd64" }}amd64
+      {{- else if eq .Arch "arm64" }}arm64
+      {{- else }}{{ .Arch }}{{ end }}
     mod_timestamp: '{{ .CommitTimestamp }}'
     flags:
       - -trimpath
     ldflags:
       - -s -w -X main.Version={{ .Version }} -X main.CurrentCommit={{ .ShortCommit }}
 
-archives:
-  - format: tar.gz
-    name_template: >-
-      {{ .ProjectName }}_
-      {{- title .Os }}_
-      {{- if eq .Arch "amd64" }}x86_64
-      {{- else if eq .Arch "arm64" }}aarch64
-      {{- else }}{{ .Arch }}{{ end }}
+archives: []
 
 changelog:
   sort: asc
