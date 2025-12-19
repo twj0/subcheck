@@ -173,7 +173,7 @@ sub-store-push-service: ""
 #        http://127.0.0.1:8199/sub/lite.tmpl.yaml
 #    - 使用方式：把 strict.tmpl.yaml / lite.tmpl.yaml 放到 output 目录下，然后按需修改本字段。
 # ===== 默认值：内置 ACL4SSR 完整规则（适合大多数用户） =====
-mihomo-overwrite-url: "http://127.0.0.1:8199/sub/ACL4SSR_Online_Full.yaml"
+mihomo-overwrite-url: "http://127.0.0.1:8199/sub/clash_template.yaml"
 
 # 保存方法
 # 目前支持的保存方法: r2, local, gist, webdav, s3, telegraph, github-raw
