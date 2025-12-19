@@ -90,7 +90,7 @@ var GlobalConfig = &Config{
 	// 新增配置，给未更改配置文件的用户一个默认值
 	ListenPort:         ":8199",
 	NotifyTitle:        "🔔 节点状态更新",
-	MihomoOverwriteUrl: "http://127.0.0.1:8199/sub/ACL4SSR_Online_Full.yaml",
+	MihomoOverwriteUrl: "http://127.0.0.1:8199/sub/clash_template.yaml",
 	Platforms:          []string{"openai", "youtube", "netflix", "disney", "gemini", "iprisk"},
 	DownloadMB:         20,
 	AliveTestUrl:       "http://gstatic.com/generate_204",

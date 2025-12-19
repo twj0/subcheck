@@ -229,6 +229,10 @@ func (app *App) Initialize() error {
 		return fmt.Errorf("Failed to load config file: %w", err)
 	}
 
+	if err := assets.EnsureDefaultOutputFiles(); err != nil {
+		return fmt.Errorf("Failed to ensure default output files: %w", err)
+	}
+
 	// 初始化配置文件监听
 	if err := app.initConfigWatcher(); err != nil {
 		return fmt.Errorf("Failed to initialize config file watcher: %w", err)
